@@ -3,34 +3,38 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { AppProvider, useAppContext } from './store/AppContext';
-import { Login } from './pages/Login';
-import { Layout } from './components/Layout';
-import { Dashboard } from './pages/Dashboard';
-import { MasterData } from './pages/MasterData';
-import { PosView } from './pages/PosView';
-import { PurchaseInvoiceContainer } from './pages/PurchaseInvoiceContainer';
-import { Report } from './pages/Report';
-import { Settings } from './pages/Settings';
+import React, { useState, useEffect } from "react";
+import { AppProvider, useAppContext } from "./store/AppContext";
+import { Login } from "./pages/Login";
+import { Layout } from "./components/Layout";
+import { Dashboard } from "./pages/Dashboard";
+import { MasterData } from "./pages/MasterData";
+import { PosView } from "./pages/PosView";
+import { PurchaseInvoiceContainer } from "./pages/PurchaseInvoiceContainer";
+import { Report } from "./pages/Report";
+import { Settings } from "./pages/Settings";
 
 function AppContent() {
   const { currentUser, data } = useAppContext();
-  const [currentPath, setCurrentPath] = useState('dashboard');
+  const [currentPath, setCurrentPath] = useState("dashboard");
 
   useEffect(() => {
     // Apply theme to document
-    if (data.theme === 'dark') {
-      document.documentElement.classList.add('dark');
+    if (data.theme === "dark") {
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
     }
   }, [data.theme]);
 
   useEffect(() => {
     // Remove existing color theme classes
     document.documentElement.classList.remove(
-      'theme-indigo', 'theme-emerald', 'theme-blue', 'theme-orange', 'theme-rose'
+      "theme-indigo",
+      "theme-emerald",
+      "theme-blue",
+      "theme-orange",
+      "theme-rose",
     );
     // Add current color theme
     if (data.colorTheme) {
@@ -38,19 +42,47 @@ function AppContent() {
     }
   }, [data.colorTheme]);
 
+  useEffect(() => {
+    // Determine path based on permissions
+    const menus = [
+      { path: "dashboard", perm: "VIEW_DASHBOARD" },
+      { path: "inbound", perm: "ACCESS_PURCHASE" },
+      { path: "outbound", perm: "ACCESS_POS" },
+      { path: "report", perm: "VIEW_REPORTS" },
+      { path: "master", perm: "MANAGE_MASTER" },
+      { path: "settings", perm: "MANAGE_USERS" },
+    ];
+
+    if (currentUser?.role === "ADMIN") return;
+
+    const permittedPaths = menus
+      .filter((m) => (currentUser?.permissions || []).includes(m.perm))
+      .map((m) => m.path);
+    if (permittedPaths.length > 0 && !permittedPaths.includes(currentPath)) {
+      setCurrentPath(permittedPaths[0]);
+    }
+  }, [currentPath, currentUser]);
+
   if (!currentUser) {
-    return <Login onSuccess={() => setCurrentPath('dashboard')} />;
+    return <Login onSuccess={() => setCurrentPath("dashboard")} />;
   }
 
   const renderPage = () => {
     switch (currentPath) {
-      case 'dashboard': return <Dashboard />;
-      case 'master': return <MasterData />;
-      case 'inbound': return <PurchaseInvoiceContainer />;
-      case 'outbound': return <PosView />;
-      case 'report': return <Report />;
-      case 'settings': return <Settings />;
-      default: return <Dashboard />;
+      case "dashboard":
+        return <Dashboard />;
+      case "master":
+        return <MasterData />;
+      case "inbound":
+        return <PurchaseInvoiceContainer />;
+      case "outbound":
+        return <PosView />;
+      case "report":
+        return <Report />;
+      case "settings":
+        return <Settings />;
+      default:
+        return <Dashboard />;
     }
   };
 

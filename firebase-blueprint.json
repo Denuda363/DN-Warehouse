@@ -1,0 +1,62 @@
+{
+  "entities": {
+    "AppData": {
+      "title": "AppData",
+      "description": "The entire application state",
+      "type": "object",
+      "properties": {
+        "users": {
+          "type": "array",
+          "description": "List of users"
+        },
+        "categories": {
+          "type": "array"
+        },
+        "units": {
+          "type": "array"
+        },
+        "suppliers": {
+          "type": "array"
+        },
+        "staffs": {
+          "type": "array"
+        },
+        "items": {
+          "type": "array"
+        },
+        "transactions": {
+          "type": "array"
+        },
+        "purchaseInvoices": {
+          "type": "array"
+        },
+        "theme": {
+          "type": "string"
+        },
+        "colorTheme": {
+          "type": "string"
+        },
+        "navBgColor": {
+          "type": "string"
+        },
+        "navTextColor": {
+          "type": "string"
+        },
+        "navIsTransparent": {
+          "type": "boolean"
+        },
+        "warehouseProfile": {
+          "type": "object"
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/appData/main": {
+      "schema": {
+        "$ref": "#/entities/AppData"
+      },
+      "description": "Singleton document containing all application data"
+    }
+  }
+}

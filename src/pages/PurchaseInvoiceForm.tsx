@@ -33,6 +33,12 @@ type InvoiceItem = {
 
 export const PurchaseInvoiceForm: React.FC<{ editInvoiceId?: string, onComplete?: () => void }> = ({ editInvoiceId, onComplete }) => {
   const { data, updateData, currentUser } = useAppContext();
+
+  const currentUserCategories = currentUser?.allowedCategoryIds || [];
+  const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
+  const filteredItems = hasCategoryRestriction 
+    ? data.items.filter(item => currentUserCategories.includes(item.categoryId))
+    : data.items;
   
   const [success, setSuccess] = useState(false);
   
@@ -393,7 +399,7 @@ export const PurchaseInvoiceForm: React.FC<{ editInvoiceId?: string, onComplete?
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:flex xl:flex-nowrap gap-3 items-end">
               <div className="sm:col-span-2 lg:col-span-2 xl:flex-[3] xl:min-w-[200px]">
                 <SearchableSelect
-                  options={data.items.map(item => ({ value: item.id, label: `[${item.sku}] ${item.name}` }))}
+                  options={filteredItems.map(item => ({ value: item.id, label: `[${item.sku}] ${item.name}` }))}
                   value={currentItem.item?.id || ''}
                   onChange={val => {
                     const item = data.items.find(i => i.id === val);

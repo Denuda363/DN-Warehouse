@@ -3,8 +3,10 @@ import { useAppContext } from '../store/AppContext';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Search, FileText, Ban, Trash2, Edit, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, FileText, Ban, Trash2, Edit, RotateCcw, ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { PurchaseInvoice, PurchaseInvoiceItem } from '../types';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export const calculateReturnTotal = (inv: PurchaseInvoice) => {
   const returnedRawSubtotal = inv.items.reduce((acc, item) => {
@@ -170,6 +172,32 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
            supplier?.name.toLowerCase().includes(searchLower);
   }) || [];
 
+  const exportPdf = () => {
+    const doc = new jsPDF();
+    doc.text('Riwayat Faktur Pembelian', 14, 15);
+    
+    const tableData = filteredInvoices.map(inv => {
+      const supplier = data.suppliers.find(s => s.id === inv.supplierId);
+      const date = new Date(inv.invoiceDate).toLocaleDateString('id-ID');
+      const returnTotal = calculateReturnTotal(inv);
+      const status = inv.status === 'CANCELED' ? 'DIBATALKAN' : 'AKTIF';
+      return [
+        inv.invoiceNo,
+        date,
+        supplier?.name || '',
+        new Intl.NumberFormat('id-ID').format(inv.total - returnTotal),
+        status
+      ];
+    });
+
+    autoTable(doc, {
+      head: [['No. Faktur', 'Tanggal', 'Supplier', 'Total (Efektif)', 'Status']],
+      body: tableData,
+      startY: 20,
+    });
+    doc.save(`riwayat_faktur_${new Date().getTime()}.pdf`);
+  };
+
   return (
     <div className="space-y-6 flex flex-col h-[calc(100vh-180px)]">
       <Card className="flex-1 flex flex-col overflow-hidden">
@@ -183,6 +211,9 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
+          <Button variant="outline" className="text-slate-600 dark:text-slate-300" onClick={exportPdf}>
+            <Download className="w-4 h-4 mr-2" /> Export PDF
+          </Button>
         </div>
         
         <div className="flex-1 overflow-x-auto bg-white dark:bg-slate-900 custom-scrollbar">

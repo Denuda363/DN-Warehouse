@@ -6,8 +6,12 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 
 export const Report: React.FC = () => {
-  const { data } = useAppContext();
+  const { data, currentUser } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<'ALL' | 'IN' | 'OUT' | 'RETURN'>('ALL');
+
+  const currentUserCategories = currentUser?.allowedCategoryIds || [];
+  const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
   
   return (
     <div className="space-y-6 flex flex-col h-[calc(100vh-120px)]">
@@ -26,14 +30,26 @@ export const Report: React.FC = () => {
 
       <Card className="flex-1 flex flex-col overflow-hidden">
         <div className="p-4 border-b dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
-          <div className="relative w-72">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-            <Input 
-              placeholder="Cari transaksi..." 
-              className="pl-9"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+              <Input 
+                placeholder="Cari transaksi..." 
+                className="pl-9 w-full"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value as any)}
+              className="flex h-10 w-full sm:w-[180px] rounded-md border border-slate-200 bg-white dark:bg-slate-900 px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 border-slate-200 dark:border-slate-700 dark:text-slate-50"
+            >
+              <option value="ALL">Semua Transaksi</option>
+              <option value="IN">Masuk</option>
+              <option value="OUT">Keluar</option>
+              <option value="RETURN">Return / Retur</option>
+            </select>
           </div>
         </div>
         
@@ -53,6 +69,15 @@ export const Report: React.FC = () => {
               {data.transactions
                 .filter(t => {
                   const item = data.items.find(i => i.id === t.itemId);
+                  if (hasCategoryRestriction && (!item || !currentUserCategories.includes(item.categoryId))) {
+                     return false;
+                  }
+
+                  const isReturn = t.notes?.toLowerCase().includes('retur') || t.notes?.toLowerCase().includes('return');
+                  if (filterType === 'RETURN' && !isReturn) return false;
+                  if (filterType === 'IN' && (t.type !== 'IN' || isReturn)) return false;
+                  if (filterType === 'OUT' && (t.type !== 'OUT' || isReturn)) return false;
+
                   const searchStr = `${item?.name || ''} ${t.notes} ${t.type}`.toLowerCase();
                   return searchStr.includes(searchTerm.toLowerCase());
                 })
@@ -67,15 +92,25 @@ export const Report: React.FC = () => {
                       {date.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="px-6 py-4">
-                      {tx.type === 'IN' ? (
-                        <span className="flex items-center text-emerald-600 dark:text-emerald-400 font-medium">
-                          <ArrowDownRight className="w-4 h-4 mr-1" /> Masuk
-                        </span>
-                      ) : (
-                        <span className="flex items-center text-orange-600 dark:text-orange-400 font-medium">
-                          <ArrowUpRight className="w-4 h-4 mr-1" /> Keluar
-                        </span>
-                      )}
+                      {(() => {
+                        const isRetur = tx.notes?.toLowerCase().includes('retur') || tx.notes?.toLowerCase().includes('return');
+                        if (isRetur) {
+                           return (
+                               <span className="flex items-center text-blue-600 dark:text-blue-400 font-medium">
+                                 {tx.type === 'IN' ? <ArrowDownRight className="w-4 h-4 mr-1" /> : <ArrowUpRight className="w-4 h-4 mr-1" />} Return
+                               </span>
+                           );
+                        }
+                        return tx.type === 'IN' ? (
+                          <span className="flex items-center text-emerald-600 dark:text-emerald-400 font-medium">
+                            <ArrowDownRight className="w-4 h-4 mr-1" /> Masuk
+                          </span>
+                        ) : (
+                          <span className="flex items-center text-orange-600 dark:text-orange-400 font-medium">
+                            <ArrowUpRight className="w-4 h-4 mr-1" /> Keluar
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 font-medium">
                       {item ? `${item.name} (${item.sku})` : 'Item dihapus'}

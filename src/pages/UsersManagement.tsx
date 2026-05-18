@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
-import { useAppContext } from '../store/AppContext';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { User, Role } from '../types';
-import { Edit, Trash2, Plus, Save, X } from 'lucide-react';
+import React, { useState } from "react";
+import { useAppContext } from "../store/AppContext";
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../components/ui/Card";
+import { User, Role } from "../types";
+import { Edit, Trash2, Plus, Save, X } from "lucide-react";
 
 export const UsersManagement: React.FC = () => {
   const { data, updateData, currentUser } = useAppContext();
@@ -12,10 +17,22 @@ export const UsersManagement: React.FC = () => {
   const [formData, setFormData] = useState<Partial<User>>({});
 
   const AVAILABLE_PERMISSIONS = [
-    { id: 'MANAGE_USERS', label: 'Manajemen Pengguna' },
-    { id: 'MANAGE_MASTER', label: 'Master Data (CRUD)' },
-    { id: 'VIEW_REPORTS', label: 'Lihat Laporan' },
-    { id: 'MANAGE_TRANSACTIONS', label: 'Input Transaksi (In/Out)' }
+    { id: "VIEW_DASHBOARD", label: "Menu: Dashboard" },
+    { id: "ACCESS_POS", label: "Menu: Kasir (POS)" },
+    { id: "ACCESS_PURCHASE", label: "Menu: Faktur Masuk" },
+    { id: "VIEW_REPORTS", label: "Menu: Arus Stok" },
+    { id: "MANAGE_MASTER", label: "Menu: Master Data (Utama)" },
+    { id: "MASTER_TAB_ITEMS", label: "Tab: Barang / Stok" },
+    { id: "MASTER_TAB_CATEGORIES", label: "Tab: Kategori" },
+    { id: "MASTER_TAB_UNITS", label: "Tab: Satuan" },
+    { id: "MASTER_TAB_SUPPLIERS", label: "Tab: Supplier" },
+    { id: "MASTER_TAB_STAFF", label: "Tab: Staff Gudang" },
+    { id: "MASTER_TAB_LOWSTOCK", label: "Tab: Stok Menipis" },
+    { id: "MANAGE_USERS", label: "Menu: Pengaturan" },
+    { id: "SETTING_TAB_THEME", label: "Tab: Tampilan Tema" },
+    { id: "SETTING_TAB_BACKUP", label: "Tab: Backup & Restore" },
+    { id: "SETTING_TAB_PROFILE", label: "Tab: Profil Gudang" },
+    { id: "SETTING_TAB_USERS", label: "Tab: Manajemen Pengguna" },
   ];
 
   const handleEdit = (user: User) => {
@@ -26,25 +43,27 @@ export const UsersManagement: React.FC = () => {
   const handeAddNew = () => {
     setFormData({
       id: `user-${Date.now()}`,
-      username: '',
-      password: '',
-      role: 'STAFF',
-      permissions: []
+      username: "",
+      password: "",
+      role: "STAFF",
+      permissions: [],
     });
     setIsEditing(true);
   };
 
   const handleSave = () => {
     if (!formData.username || !formData.role) return;
-    
-    const existing = data.users.find(u => u.id === formData.id);
+
+    const existing = data.users.find((u) => u.id === formData.id);
     let newUsers;
     if (existing) {
-      newUsers = data.users.map(u => u.id === formData.id ? { ...u, ...formData } as User : u);
+      newUsers = data.users.map((u) =>
+        u.id === formData.id ? ({ ...u, ...formData } as User) : u,
+      );
     } else {
       newUsers = [...data.users, formData as User];
     }
-    
+
     updateData({ users: newUsers });
     setIsEditing(false);
   };
@@ -55,7 +74,7 @@ export const UsersManagement: React.FC = () => {
       return;
     }
     if (confirm("Hapus pengguna ini?")) {
-      updateData({ users: data.users.filter(u => u.id !== id) });
+      updateData({ users: data.users.filter((u) => u.id !== id) });
     }
   };
 
@@ -63,11 +82,22 @@ export const UsersManagement: React.FC = () => {
     const currentPerms = formData.permissions || [];
     let newPerms;
     if (currentPerms.includes(permId)) {
-      newPerms = currentPerms.filter(p => p !== permId);
+      newPerms = currentPerms.filter((p) => p !== permId);
     } else {
       newPerms = [...currentPerms, permId];
     }
     setFormData({ ...formData, permissions: newPerms });
+  };
+
+  const toggleCategory = (catId: string) => {
+    const currentCats = formData.allowedCategoryIds || [];
+    let newCats;
+    if (currentCats.includes(catId)) {
+      newCats = currentCats.filter((c) => c !== catId);
+    } else {
+      newCats = [...currentCats, catId];
+    }
+    setFormData({ ...formData, allowedCategoryIds: newCats });
   };
 
   return (
@@ -75,7 +105,11 @@ export const UsersManagement: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Manajemen Pengguna & Hak Akses</CardTitle>
         {!isEditing && (
-          <Button onClick={handeAddNew} className="bg-indigo-600 hover:bg-indigo-700 text-white" size="sm">
+          <Button
+            onClick={handeAddNew}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            size="sm"
+          >
             <Plus className="w-4 h-4 mr-2" /> Tambah Pengguna
           </Button>
         )}
@@ -84,35 +118,53 @@ export const UsersManagement: React.FC = () => {
         {isEditing ? (
           <div className="p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50 mb-4 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
             <h3 className="font-bold mb-4 flex items-center justify-between text-slate-800 dark:text-slate-100">
-              {data.users.find(u => u.id === formData.id) ? 'Edit Pengguna' : 'Tambah Pengguna Baru'}
-              <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
+              {data.users.find((u) => u.id === formData.id)
+                ? "Edit Pengguna"
+                : "Tambah Pengguna Baru"}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditing(false)}
+              >
                 <X className="w-4 h-4 mr-1" /> Batal
               </Button>
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b dark:border-slate-800 pb-4 mb-4">
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Username</label>
-                <Input 
-                  value={formData.username || ''}
-                  onChange={(e) => setFormData({...formData, username: e.target.value})}
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">
+                  Username
+                </label>
+                <Input
+                  value={formData.username || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, username: e.target.value })
+                  }
                   placeholder="Username"
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Password</label>
-                <Input 
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">
+                  Password
+                </label>
+                <Input
                   type="password"
-                  value={formData.password || ''}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  value={formData.password || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   placeholder="Isi untuk mengubah password"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Role</label>
-                <select 
-                  value={formData.role || 'STAFF'}
-                  onChange={e => setFormData({...formData, role: e.target.value as Role})}
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">
+                  Role
+                </label>
+                <select
+                  value={formData.role || "STAFF"}
+                  onChange={(e) =>
+                    setFormData({ ...formData, role: e.target.value as Role })
+                  }
                   className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-950"
                 >
                   <option value="ADMIN">ADMIN</option>
@@ -123,12 +175,17 @@ export const UsersManagement: React.FC = () => {
             </div>
 
             <div className="mb-4">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Hak Akses (Permissions)</label>
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                Hak Akses (Permissions)
+              </label>
               <div className="space-y-2">
-                {AVAILABLE_PERMISSIONS.map(perm => (
-                  <label key={perm.id} className="flex items-center space-x-3 p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                    <input 
-                      type="checkbox" 
+                {AVAILABLE_PERMISSIONS.map((perm) => (
+                  <label
+                    key={perm.id}
+                    className="flex items-center space-x-3 p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
                       title={perm.label}
                       checked={(formData.permissions || []).includes(perm.id)}
                       onChange={() => togglePermission(perm.id)}
@@ -140,8 +197,36 @@ export const UsersManagement: React.FC = () => {
               </div>
             </div>
 
+            <div className="mb-4">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">
+                Hak Akses Kategori (Kosongkan jika bisa akses semua)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {data.categories.map((cat) => (
+                  <label
+                    key={cat.id}
+                    className="flex items-center space-x-3 p-2 rounded border dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      title={cat.name}
+                      checked={(formData.allowedCategoryIds || []).includes(
+                        cat.id,
+                      )}
+                      onChange={() => toggleCategory(cat.id)}
+                      className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 accent-indigo-600"
+                    />
+                    <span className="text-sm font-medium">{cat.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="flex justify-end">
-              <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              <Button
+                onClick={handleSave}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
                 <Save className="w-4 h-4 mr-2" /> Simpan Pengguna
               </Button>
             </div>
@@ -159,8 +244,11 @@ export const UsersManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-slate-800">
-              {data.users.map(u => (
-                <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
+              {data.users.map((u) => (
+                <tr
+                  key={u.id}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                >
                   <td className="px-4 py-3 font-medium">{u.username}</td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 text-xs font-bold font-mono">
@@ -171,10 +259,20 @@ export const UsersManagement: React.FC = () => {
                     {u.permissions.length} akses aktif
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(u)} className="text-slate-500 hover:text-indigo-600 h-8 w-8 px-0 mr-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(u)}
+                      className="text-slate-500 hover:text-indigo-600 h-8 w-8 px-0 mr-1"
+                    >
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(u.id)} className="text-slate-500 hover:text-red-600 h-8 w-8 px-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(u.id)}
+                      className="text-slate-500 hover:text-red-600 h-8 w-8 px-0"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </td>

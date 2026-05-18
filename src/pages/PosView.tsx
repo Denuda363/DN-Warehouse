@@ -2,8 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Search, History, UserSquare, Users, CreditCard, ScanLine, Save, ArrowLeft, Edit, Trash2, RotateCcw, X } from 'lucide-react';
+import { Search, History, UserSquare, Users, CreditCard, ScanLine, Save, ArrowLeft, Edit, Trash2, RotateCcw, X, FileText } from 'lucide-react';
 import { Item, Transaction } from '../types';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type CartItem = Item & {
   cartQty: number; // total base units
@@ -37,6 +39,13 @@ export const PosView: React.FC = () => {
 
   const filteredItems = useMemo(() => {
     return data.items.filter(item => {
+      // Restriction by permissions
+      const currentUserCategories = currentUser?.allowedCategoryIds || [];
+      const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
+      if (hasCategoryRestriction && !currentUserCategories.includes(item.categoryId)) {
+         return false;
+      }
+
       const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || item.sku.toLowerCase().includes(searchTerm.toLowerCase());
       if (!matchSearch) return false;
       if (activeCategory !== 'Semua') {
@@ -45,7 +54,7 @@ export const PosView: React.FC = () => {
       }
       return true;
     });
-  }, [data.items, data.categories, searchTerm, activeCategory]);
+  }, [data.items, data.categories, searchTerm, activeCategory, currentUser]);
 
   const getConversionRate = (item: Item, unitId: string) => {
      if (unitId === item.unitId) return 1;
@@ -161,7 +170,9 @@ export const PosView: React.FC = () => {
       return;
     }
 
-    const diff = tx.qty - editTxModal.qty; // if old qty 5, new qty 3, diff = 2 (return to stock)
+    const newDisplayQty = editTxModal.qty;
+    const newQty = newDisplayQty * (tx.conversionRate || 1);
+    const diff = tx.qty - newQty; // if old qty 5, new qty 3, diff = 2 (return to stock)
 
     const newItems = data.items.map(item => {
       if (item.id === tx.itemId) {
@@ -171,7 +182,7 @@ export const PosView: React.FC = () => {
     });
 
     updateData({
-      transactions: data.transactions.map(t => t.id === tx.id ? { ...t, qty: editTxModal.qty } : t),
+      transactions: data.transactions.map(t => t.id === tx.id ? { ...t, qty: newQty, displayQty: newDisplayQty } : t),
       items: newItems
     });
     setEditTxModal(null);
@@ -187,20 +198,25 @@ export const PosView: React.FC = () => {
 
     const originalTx = data.transactions.find(t => t.id === id);
     if (!originalTx) return;
+    
+    const returnQty = qty * (originalTx.conversionRate || 1);
 
     const returnTx: Transaction = {
       id: `tx-ret-${Date.now()}`,
       date: new Date().toISOString(),
       type: 'IN',
       itemId: originalTx.itemId,
-      qty: qty,
+      qty: returnQty,
+      displayUnitId: originalTx.displayUnitId,
+      displayQty: qty,
+      conversionRate: originalTx.conversionRate,
       notes: `Retur dari transaksi ${originalTx.id}`,
       userId: currentUser?.id || 'unknown'
     };
 
     const newItems = data.items.map(item => {
       if (item.id === originalTx.itemId) {
-        return { ...item, stock: item.stock + qty };
+        return { ...item, stock: item.stock + returnQty };
       }
       return item;
     });
@@ -215,7 +231,17 @@ export const PosView: React.FC = () => {
 
   const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
 
-  const historyTxs = data.transactions.filter(t => t.type === 'OUT');
+  const currentUserCategories = currentUser?.allowedCategoryIds || [];
+  const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
+
+  const historyTxs = data.transactions.filter(t => {
+     if (t.type !== 'OUT') return false;
+     if (hasCategoryRestriction) {
+        const item = data.items.find(i => i.id === t.itemId);
+        if (!item || !currentUserCategories.includes(item.categoryId)) return false;
+     }
+     return true;
+  });
   
   // Group by groupId (or id for old ones)
   const groupedHistory = historyTxs.reduce((acc, tx) => {
@@ -260,6 +286,73 @@ export const PosView: React.FC = () => {
     return matchId || matchItemName;
   });
 
+  const exportPosHistoryPdf = () => {
+    const doc = new jsPDF();
+    doc.text('Riwayat POS / Transaksi Keluar', 14, 15);
+    
+    const tableData: any[][] = [];
+    filteredHistoryGroups.forEach(group => {
+      const gId = group.id.startsWith('POS-') ? group.id : group.id.split('-').slice(0,4).join('-');
+      group.transactions.forEach(tx => {
+        const item = data.items.find(i => i.id === tx.itemId);
+        tableData.push([
+          new Date(group.date).toLocaleString('id-ID'),
+          gId,
+          item?.name || 'Unknown',
+          `${tx.displayQty || tx.qty} ${data.units.find(u => u.id === (tx.displayUnitId || item?.unitId))?.name || ''}`,
+          group.notes || '-'
+        ]);
+      });
+    });
+
+    autoTable(doc, {
+      head: [['Tanggal', 'No Transaksi', 'Barang', 'Qty', 'Penyedia / Keterangan']],
+      body: tableData,
+      startY: 20,
+    });
+    doc.save(`riwayat_pos_${new Date().getTime()}.pdf`);
+  };
+
+  const exportNotaPdf = (group: { id: string; date: string; notes: string; transactions: Transaction[] }) => {
+    const doc = new jsPDF();
+    const gId = group.id.startsWith('POS-') ? group.id : group.id.split('-').slice(0,4).join('-');
+    const profile = data.warehouseProfile;
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text(profile?.name || 'GudangSync', 14, 20);
+    doc.setFontSize(10);
+    doc.text(profile?.address || 'Alamat tidak tersedia', 14, 28);
+    doc.text(profile?.phone || 'Telepon tidak tersedia', 14, 34);
+    
+    doc.line(14, 38, 196, 38);
+    
+    doc.setFontSize(14);
+    doc.text('NOTA TRANSAKSI / BARANG KELUAR', 14, 48);
+    doc.setFontSize(10);
+    doc.text(`No. Transaksi: ${gId}`, 14, 56);
+    doc.text(`Tanggal: ${new Date(group.date).toLocaleString('id-ID')}`, 14, 62);
+    doc.text(`Keterangan / Penyedia: ${group.notes || '-'}`, 14, 68);
+
+    const tableData: any[][] = [];
+    group.transactions.forEach((tx, idx) => {
+       const item = data.items.find(i => i.id === tx.itemId);
+       tableData.push([
+         idx + 1,
+         item?.name || 'Unknown',
+         `${tx.displayQty || tx.qty} ${data.units.find(u => u.id === (tx.displayUnitId || item?.unitId))?.name || ''}`
+       ]);
+    });
+
+    autoTable(doc, {
+      head: [['No', 'Barang', 'Qty']],
+      body: tableData,
+      startY: 75,
+    });
+
+    doc.save(`nota_${gId}.pdf`);
+  };
+
   return (
     <div className="h-[calc(100vh-100px)] flex flex-col gap-4 -mx-4 -mt-4 lg:m-0 p-4 bg-slate-100 dark:bg-slate-900 lg:rounded-xl overflow-hidden shadow-sm">
       <div className="flex flex-col lg:flex-row gap-4 flex-1 overflow-hidden min-h-0">
@@ -269,14 +362,14 @@ export const PosView: React.FC = () => {
             <div className="relative flex-1">
               <UserSquare className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
-                list="penyedia-list"
-                placeholder="Pencarian Penyedia..." 
+                list="staffs-list"
+                placeholder="Pencarian Staff Gudang..." 
                 className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 pl-9 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-950"
                 value={penyedia}
                 onChange={e => setPenyedia(e.target.value)}
               />
-              <datalist id="penyedia-list">
-                {data.suppliers.map(s => <option key={s.id} value={s.name} />)}
+              <datalist id="staffs-list">
+                {(data.staffs || []).map(s => <option key={s.id} value={s.name} />)}
               </datalist>
             </div>
             <div className="relative w-40">
@@ -293,9 +386,14 @@ export const PosView: React.FC = () => {
                </Button>
             )}
             {viewMode === 'history' && (
-               <Button variant="outline" className="h-10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => setViewMode('pos')}>
-                 <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke POS
-               </Button>
+               <>
+                 <Button variant="outline" className="h-10 text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" onClick={exportPosHistoryPdf}>
+                   <FileText className="w-4 h-4 mr-2" /> Export PDF
+                 </Button>
+                 <Button variant="outline" className="h-10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => setViewMode('pos')}>
+                   <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke POS
+                 </Button>
+               </>
             )}
           </div>
 
@@ -327,7 +425,11 @@ export const PosView: React.FC = () => {
                 >
                   Semua
                 </button>
-                {data.categories.map(cat => (
+                {data.categories.filter(cat => {
+                   const currentUserCategories = currentUser?.allowedCategoryIds || [];
+                   const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
+                   return !hasCategoryRestriction || currentUserCategories.includes(cat.id);
+                }).map(cat => (
                   <button
                     key={cat.id}
                     onClick={() => setActiveCategory(cat.name)}
@@ -429,6 +531,9 @@ export const PosView: React.FC = () => {
                                  {totalItems} Macam Barang Keluar
                                </h4>
                                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{group.notes || '-'}</p>
+<Button size="sm" variant="outline" className="mt-2 h-7 px-2 text-xs text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950 border-rose-200 dark:border-rose-900" onClick={(e) => { e.stopPropagation(); exportNotaPdf(group); }}>
+  <FileText className="w-3 h-3 mr-1" /> Export Nota
+</Button>
                              </div>
                              <div className="text-right">
                                <div className="text-2xl font-black text-rose-500 dark:text-rose-400">
@@ -459,10 +564,10 @@ export const PosView: React.FC = () => {
                                         )}
                                       </div>
                                       <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity">
-                                         <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50" onClick={(e) => { e.stopPropagation(); setReturnTxModal({ id: tx.id, maxQty: tx.qty, qty: 1 }); }} title="Retur">
+                                         <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50" onClick={(e) => { e.stopPropagation(); setReturnTxModal({ id: tx.id, maxQty: tx.displayQty || tx.qty, qty: 1 }); }} title="Retur">
                                            <RotateCcw className="w-4 h-4" />
                                          </Button>
-                                         <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50" onClick={(e) => { e.stopPropagation(); setEditTxModal({ id: tx.id, qty: tx.qty }); }} title="Edit Qty">
+                                         <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50" onClick={(e) => { e.stopPropagation(); setEditTxModal({ id: tx.id, qty: tx.displayQty || tx.qty }); }} title="Edit Qty">
                                            <Edit className="w-4 h-4" />
                                          </Button>
                                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDeleteHistory(tx); }} title="Hapus">

@@ -6,6 +6,7 @@ export type User = {
   password?: string;
   role: Role;
   permissions: string[]; // e.g., 'MANAGE_USERS', 'MANAGE_MASTER', 'VIEW_REPORTS', 'MANAGE_TRANSACTIONS'
+  allowedCategoryIds?: string[]; // If set and not empty, restrict access to these categories.
 };
 
 export type Category = {
@@ -22,6 +23,12 @@ export type Supplier = {
   id: string;
   name: string;
   contact: string;
+};
+
+export type Staff = {
+  id: string;
+  name: string;
+  phone?: string;
 };
 
 export type Item = {
@@ -108,6 +115,7 @@ export type AppData = {
   categories: Category[];
   units: Unit[];
   suppliers: Supplier[];
+  staffs: Staff[];
   items: Item[];
   transactions: Transaction[];
   purchaseInvoices: PurchaseInvoice[];
