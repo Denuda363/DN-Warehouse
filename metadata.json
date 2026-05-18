@@ -1,0 +1,6 @@
+{
+  "name": "GudangSync",
+  "description": "Aplikasi manajemen stok gudang modern dan keren (SPA) dengan fitur laporan, master data, dan mode gelap.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
