@@ -111,36 +111,49 @@ export const Layout: React.FC<{
 
   return (
     <div
-      className={`min-h-screen flex ${data.theme === "dark" ? "dark bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}
+      className={`min-h-screen flex h-screen overflow-hidden ${data.theme === "dark" ? "dark bg-slate-950 text-white" : "bg-slate-100 text-slate-900"}`}
     >
       {/* Sidebar - Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 ${sidebarOpen ? "w-72 translate-x-0" : "w-20 -translate-x-full lg:translate-x-0"} transition-all duration-300 border-r border-slate-800/20 shadow-2xl lg:shadow-none flex flex-col font-sans`}
+        className={`fixed md:relative inset-y-0 left-0 z-50 h-full ${sidebarOpen ? "w-72 translate-x-0" : "w-20 -translate-x-full md:translate-x-0"} transition-all duration-300 flex flex-col font-sans shrink-0 border-r shadow-2xl md:shadow-none`}
         style={
           data.navIsTransparent
-            ? { backgroundColor: "transparent", color: data.navTextColor || "#e2e8f0" }
+            ? {
+                backgroundColor: "transparent",
+                color: data.navTextColor || "#e2e8f0",
+                borderColor: "rgba(148, 163, 184, 0.1)",
+              }
             : {
-                backgroundColor: data.navBgColor || (data.theme === "dark" ? "#111111" : "#ffffff"),
-                color: data.navTextColor || (data.theme === "dark" ? "#e2e8f0" : "#334155"),
+                backgroundColor:
+                  data.navBgColor ||
+                  (data.theme === "dark" ? "#111111" : "#ffffff"),
+                color:
+                  data.navTextColor ||
+                  (data.theme === "dark" ? "#e2e8f0" : "#334155"),
+                borderColor: "rgba(148, 163, 184, 0.1)",
               }
         }
       >
         {/* Mac OS like dots */}
-        <div className="flex px-5 pt-5 pb-2 gap-1.5 shrink-0">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+        <div
+          className={`flex px-5 py-4 gap-2 shrink-0 ${!sidebarOpen ? "justify-center" : ""}`}
+        >
+          <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+          <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+          <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
         </div>
 
-        <div className="px-4 py-3 flex items-center justify-between shrink-0">
+        <div
+          className={`px-4 pb-4 flex items-center justify-between shrink-0 transition-all ${!sidebarOpen ? "justify-center" : ""}`}
+        >
           <div className="flex items-center">
             {data.warehouseProfile?.logo ? (
               <img
@@ -149,39 +162,58 @@ export const Layout: React.FC<{
                 className={`w-8 h-8 rounded shrink-0 object-contain shadow-sm bg-indigo-500/10 p-1`}
               />
             ) : (
-              <div className="w-8 h-8 rounded bg-indigo-500/10 flex items-center justify-center shrink-0">
-                <div className="w-4 h-4 bg-indigo-500 rounded-sm"></div>
+              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
+                <div className="w-3 h-3 bg-white rounded-sm opacity-80"></div>
               </div>
             )}
             {sidebarOpen && (
-              <span className="ml-3 font-bold text-base tracking-wide uppercase" style={{ color: data.navTextColor || (data.theme === "dark" ? "#ffffff" : "#0f172a") }}>
+              <span className="ml-3 font-bold text-sm tracking-widest uppercase transition-opacity">
                 {data.warehouseProfile?.name || "ROUNDS"}
               </span>
             )}
           </div>
           {sidebarOpen && (
-            <button onClick={() => setSidebarOpen(false)} className="p-1 rounded-md border hover:bg-slate-500/10 transition-colors" style={{ borderColor: "currentColor", opacity: 0.5 }}>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors border border-slate-300 dark:border-slate-700 hidden md:block"
+              style={{ opacity: 0.6 }}
+            >
               <ArrowRightLeft className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        <div className="px-4 py-3 shrink-0">
-           <div className="flex items-center w-full px-3 py-2 rounded-md bg-slate-500/10">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              {sidebarOpen && (
-                <input 
-                   type="text" 
-                   placeholder="Search" 
-                   className="ml-3 bg-transparent border-none outline-none text-sm w-full placeholder-current" 
-                   style={{ opacity: 0.7 }}
-                   disabled
-                />
-              )}
-           </div>
+        <div className="px-4 py-2 shrink-0">
+          <div
+            className={`flex items-center px-3 py-2.5 rounded-lg bg-slate-500/10 focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all ${!sidebarOpen ? "justify-center" : "w-full"}`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="opacity-50 shrink-0"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            {sidebarOpen && (
+              <input
+                type="text"
+                placeholder="Search"
+                className="ml-3 bg-transparent border-none outline-none text-sm w-full placeholder-current"
+                style={{ opacity: 0.7 }}
+              />
+            )}
+          </div>
         </div>
 
-        <nav className="flex-1 py-4 flex flex-col gap-1 overflow-y-auto custom-scrollbar relative">
+        <nav className="flex-1 py-4 flex flex-col gap-1 overflow-y-auto custom-scrollbar relative px-2">
           {menus.map((m) => {
             const Icon = m.icon;
             const active = currentPath === m.path;
@@ -198,120 +230,163 @@ export const Layout: React.FC<{
                 key={m.path}
                 onClick={() => {
                   navigate(m.path);
-                  if (window.innerWidth < 1024) setSidebarOpen(false);
+                  if (window.innerWidth < 768) setSidebarOpen(false);
                 }}
-                className={`relative group flex items-center px-6 py-3 transition-colors ${active ? "opacity-100" : "opacity-60 hover:opacity-100"}`}
+                className={`relative group flex items-center px-4 py-3 min-h-[44px] transition-all rounded-lg ${active ? "" : "hover:bg-slate-500/5"}`}
                 style={
-                  active ? { color: "#6366f1" } : { color: "currentColor" }
+                  active
+                    ? {
+                        color: "#6366f1",
+                        backgroundColor: "rgba(99, 102, 241, 0.1)",
+                      }
+                    : { color: "currentColor", opacity: 0.7 }
                 }
                 title={sidebarOpen ? undefined : m.name}
               >
-                {active && (
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 rounded-l-md"></div>
+                {active && !sidebarOpen && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 rounded-r-md"></div>
                 )}
 
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                
+                <div
+                  className={`flex items-center justify-center ${sidebarOpen ? "" : "w-full"}`}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                </div>
+
                 {sidebarOpen && (
-                  <span className="ml-4 text-sm font-medium">
-                    {m.name}
-                  </span>
+                  <>
+                    <span className="ml-4 text-sm font-medium whitespace-nowrap">
+                      {m.name}
+                    </span>
+                    {active && (
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 rounded-l-md"></div>
+                    )}
+                  </>
                 )}
               </button>
             );
           })}
 
-          <div className="px-6 py-4">
-             <div className="border-t border-dashed opacity-20" style={{ borderColor: 'currentColor' }}></div>
+          <div className="px-4 py-4">
+            <div
+              className="border-t border-dashed opacity-20"
+              style={{ borderColor: "currentColor" }}
+            ></div>
           </div>
 
           <button
-             onClick={() => setCurrentUser(null)}
-             className={`relative group flex items-center px-6 py-3 transition-colors opacity-60 hover:opacity-100`}
-             style={{ color: "currentColor" }}
-             title="Logout"
+            onClick={() => setCurrentUser(null)}
+            className={`relative group flex items-center px-4 py-3 min-h-[44px] transition-all rounded-lg hover:bg-slate-500/5`}
+            style={{ color: "currentColor", opacity: 0.7 }}
+            title="Logout"
           >
-             <LogOut className="w-5 h-5 flex-shrink-0" />
-             {sidebarOpen && <span className="ml-4 text-sm font-medium">Logout</span>}
+            <div
+              className={`flex items-center justify-center ${sidebarOpen ? "" : "w-full"}`}
+            >
+              <LogOut className="w-5 h-5 flex-shrink-0" />
+            </div>
+            {sidebarOpen && (
+              <span className="ml-4 text-sm font-medium whitespace-nowrap">
+                Logout
+              </span>
+            )}
           </button>
         </nav>
 
-        <div className="p-5 border-t border-dashed opacity-90 shrink-0" style={{ borderColor: 'currentColor', borderTopWidth: '1px', borderStyle: 'dashed', borderOpacity: 0.2 }}>
-          <div className={`flex items-center ${!sidebarOpen ? 'justify-center' : ''}`}>
-             <div className="w-9 h-9 rounded-full bg-rose-200 overflow-hidden shrink-0 flex items-center justify-center">
-                {currentUser?.username?.charAt(0).toUpperCase() || "U"}
-             </div>
-             {sidebarOpen && (
-               <div className="ml-3 overflow-hidden text-left">
-                 <p className="text-sm font-medium truncate" style={{ color: "currentColor", opacity: 0.9 }}>{currentUser?.username}</p>
-                 <p className="text-[11px] truncate mt-0.5 lowercase" style={{ color: "currentColor", opacity: 0.5 }}>{currentUser?.username}@gudang.com</p>
-               </div>
-             )}
+        <div className="p-4 border-t border-slate-500/10 shrink-0">
+          <div
+            className={`flex items-center ${!sidebarOpen ? "justify-center" : ""}`}
+          >
+            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/50 overflow-hidden shrink-0 flex items-center justify-center ring-2 ring-indigo-500/20">
+              {currentUser?.username?.charAt(0).toUpperCase() || "U"}
+            </div>
+            {sidebarOpen && (
+              <div className="ml-3 overflow-hidden text-left flex-1 min-w-0">
+                <p
+                  className="text-sm font-semibold truncate"
+                  style={{ color: "currentColor", opacity: 0.9 }}
+                >
+                  {currentUser?.username}
+                </p>
+                <p
+                  className="text-[11px] truncate mt-0.5"
+                  style={{ color: "currentColor", opacity: 0.5 }}
+                >
+                  {currentUser?.role === "ADMIN" ? "Administrator" : "User"}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Header */}
-        <header className="h-16 bg-white dark:bg-slate-900 border-b dark:border-slate-800 flex items-center justify-between px-6">
+        <header className="h-16 bg-white dark:bg-slate-900/50 backdrop-blur border-b dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 shrink-0">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-5 h-5" />
           </button>
 
           <div className="flex items-center gap-6">
             <div className="relative">
-              <div
-                className="cursor-pointer mr-2"
+              <button
+                className="p-2 relative rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 onClick={() => setShowNotifications(!showNotifications)}
               >
-                <Bell className="w-6 h-6 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors" />
+                <Bell className="w-5 h-5" />
                 {totalNotifs > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow">
+                  <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow ring-2 ring-white dark:ring-slate-900">
                     {totalNotifs > 99 ? "99+" : totalNotifs}
                   </span>
                 )}
-              </div>
+              </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-3 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden flex flex-col max-h-96">
-                  <div className="p-3 border-b dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center shrink-0">
-                    <span className="font-bold text-sm">
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden flex flex-col max-h-[80vh]">
+                  <div className="p-3 border-b dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center shrink-0">
+                    <span className="font-semibold text-sm">
                       Notifikasi ({totalNotifs})
                     </span>
                     <button
-                      className="text-xs text-indigo-600 hover:underline"
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
                       onClick={() => setShowNotifications(false)}
                     >
                       Tutup
                     </button>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                  <div className="flex-1 overflow-y-auto p-3 space-y-2">
                     {lowStockItems.map((item) => (
                       <div
                         key={`ls-${item.id}`}
-                        className="p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-100 dark:border-red-900/30 text-xs"
+                        className="p-3 bg-red-50 dark:bg-rose-900/10 rounded-lg border border-red-100 dark:border-rose-900/30 text-sm"
                       >
-                        <span className="font-bold text-red-600 dark:text-red-400">
-                          Stok Menipis:
-                        </span>{" "}
-                        {item.name} (Sisa: {item.stock})
+                        <span className="font-bold text-rose-600 dark:text-rose-400 block mb-1">
+                          ⚠️ Stok Menipis
+                        </span>
+                        <span className="text-slate-600 dark:text-slate-300">
+                          {item.name} (Sisa: {item.stock})
+                        </span>
                       </div>
                     ))}
                     {expiringItems.map((item) => (
                       <div
                         key={`exp-${item.id}`}
-                        className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-100 dark:border-orange-900/30 text-xs"
+                        className="p-3 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-100 dark:border-orange-900/30 text-sm"
                       >
-                        <span className="font-bold text-orange-600 dark:text-orange-400">
-                          Akan Expired:
-                        </span>{" "}
-                        {item.name}{" "}
-                        {item.batchNumber ? `(Batch: ${item.batchNumber})` : ""}{" "}
-                        - Exp: {item.expiryDate}
+                        <span className="font-bold text-orange-600 dark:text-orange-400 block mb-1">
+                          ⏳ Akan Expired
+                        </span>
+                        <span className="text-slate-600 dark:text-slate-300">
+                          {item.name}{" "}
+                          {item.batchNumber
+                            ? `(Batch: ${item.batchNumber})`
+                            : ""}{" "}
+                          - Exp: {item.expiryDate}
+                        </span>
                       </div>
                     ))}
                     {recentTxs.map((tx) => {
@@ -320,13 +395,15 @@ export const Layout: React.FC<{
                       return (
                         <div
                           key={`tx-${tx.id}`}
-                          className={`p-2 rounded border text-xs ${isOut ? "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-900/30" : "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-900/30"}`}
+                          className={`p-3 rounded-lg border text-sm ${isOut ? "bg-indigo-50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-900/30" : "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30"}`}
                         >
-                          <div className="font-bold mb-1">
-                            {isOut ? "Barang Keluar" : "Barang Masuk"} -{" "}
+                          <div
+                            className={`font-bold mb-1 ${isOut ? "text-indigo-600 dark:text-indigo-400" : "text-emerald-600 dark:text-emerald-400"}`}
+                          >
+                            {isOut ? "📦 Barang Keluar" : "📥 Barang Masuk"} -{" "}
                             {new Date(tx.date).toLocaleDateString()}
                           </div>
-                          <div>
+                          <div className="text-slate-600 dark:text-slate-300">
                             {isOut ? "-" : "+"}
                             {tx.qty} {item?.name}
                           </div>
@@ -334,7 +411,8 @@ export const Layout: React.FC<{
                       );
                     })}
                     {totalNotifs === 0 && (
-                      <div className="p-4 text-center text-slate-500 text-sm">
+                      <div className="px-4 py-8 text-center text-slate-500 text-sm flex flex-col items-center">
+                        <Bell className="w-8 h-8 mb-2 opacity-20" />
                         Belum ada notifikasi
                       </div>
                     )}
@@ -346,8 +424,8 @@ export const Layout: React.FC<{
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6 bg-slate-50 dark:bg-slate-950 relative">
-          {children}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 bg-slate-50/50 dark:bg-slate-950/50 relative">
+          <div className="max-w-7xl mx-auto h-full">{children}</div>
         </main>
       </div>
     </div>
