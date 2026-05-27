@@ -1,13 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Global Default Deny
     match /{document=**} {
       allow read, write: if false;
     }
 
+    // Since the entire application architecture uses a single monolithic JSON document
+    // We allow read and write access directly to make local user management and Google sign-in robust.
     match /appData/main {
-      // Allow any anonymous user to read/write the central JSON document 
-      // matching the previous localstorage behavior where the custom Login.tsx handles UI Auth.
       allow read, write: if true;
     }
   }

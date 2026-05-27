@@ -15,7 +15,7 @@ import { Report } from "./pages/Report";
 import { Settings } from "./pages/Settings";
 
 function AppContent() {
-  const { currentUser, data } = useAppContext();
+  const { currentUser, data, isLoading } = useAppContext();
   const [currentPath, setCurrentPath] = useState("dashboard");
 
   useEffect(() => {
@@ -62,6 +62,17 @@ function AppContent() {
       setCurrentPath(permittedPaths[0]);
     }
   }, [currentPath, currentUser]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 font-sans">
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mb-4" />
+          <p className="text-slate-400 font-medium">Memuat sistem...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return <Login onSuccess={() => setCurrentPath("dashboard")} />;

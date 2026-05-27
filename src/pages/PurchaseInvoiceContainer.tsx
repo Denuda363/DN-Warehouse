@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PurchaseInvoiceForm } from './PurchaseInvoiceForm';
 import { PurchaseInvoiceList } from './PurchaseInvoiceList';
 import { PurchaseReturnList } from './PurchaseReturnList';
+import { JarvisTransition } from '../components/JarvisTransition';
 
 export const PurchaseInvoiceContainer: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'form' | 'history' | 'return'>('form');
@@ -60,9 +61,11 @@ export const PurchaseInvoiceContainer: React.FC = () => {
       </div>
 
       <div className="mt-4">
-        {activeTab === 'form' && <PurchaseInvoiceForm editInvoiceId={editId} onComplete={handleComplete} />}
-        {activeTab === 'history' && <PurchaseInvoiceList onEdit={handleEdit} />}
-        {activeTab === 'return' && <PurchaseReturnList />}
+        <JarvisTransition pageKey={activeTab} mode="tab">
+          {activeTab === 'form' && <PurchaseInvoiceForm editInvoiceId={editId} onComplete={handleComplete} />}
+          {activeTab === 'history' && <PurchaseInvoiceList onEdit={handleEdit} />}
+          {activeTab === 'return' && <PurchaseReturnList />}
+        </JarvisTransition>
       </div>
     </div>
   );

@@ -10,8 +10,8 @@ import type {
   Transaction,
   PurchaseInvoice,
 } from "../types";
-import { db, auth } from "../firebase";
-import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
+import { db, auth, handleFirestoreError, OperationType } from "../firebase";
+import { doc, getDoc, setDoc, onSnapshot, getDocFromServer } from "firebase/firestore";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 
 const defaultData: AppData = {
@@ -87,7 +87,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [firebaseUser, setFirebaseUser] = useState<any>(null);
 
   useEffect(() => {
+    async function testConnection() {
+      try {
+        await getDocFromServer(doc(db, 'appData', 'connection_test'));
+      } catch (error) {
+        if(error instanceof Error && error.message.includes('the client is offline')) {
+          console.error("Please check your Firebase configuration.");
+        }
+      }
+    }
+    testConnection();
+
+    return onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+    });
+  }, []);
+
+  useEffect(() => {
     let isSettingInitial = false;
+    setIsLoading(true);
 
     const unsub = onSnapshot(
       doc(db, "appData", "main"),
@@ -96,35 +114,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           const fetched = { ...defaultData, ...snap.data() } as AppData;
           setData(fetched);
 
-          // Match currently logged in google user to local User by email or assume admin
           const savedUserStr = localStorage.getItem("gudang_user");
           if (savedUserStr) {
             try {
-              setCurrentUser(JSON.parse(savedUserStr));
-            } catch (e) {}
+              const parsed = JSON.parse(savedUserStr);
+              if (firebaseUser) {
+                // Security verification: ensure it matches logged in Google user email
+                if (parsed.username === firebaseUser.email) {
+                  setCurrentUser(parsed);
+                } else if (fetched.users.find((u) => u.username === firebaseUser.email)) {
+                  setCurrentUser(fetched.users.find((u) => u.username === firebaseUser.email) as User);
+                } else {
+                  setCurrentUser(null);
+                }
+              } else {
+                // Local session: verify it exists in fetched.users
+                const activeLocalUser = fetched.users.find((u) => u.username === parsed.username);
+                if (activeLocalUser) {
+                  setCurrentUser(activeLocalUser);
+                } else {
+                  setCurrentUser(null);
+                }
+              }
+            } catch (e) {
+              setCurrentUser(null);
+            }
+          } else {
+            if (firebaseUser && fetched.users.find((u) => u.username === firebaseUser.email)) {
+              setCurrentUser(fetched.users.find((u) => u.username === firebaseUser.email) as User);
+            } else {
+              setCurrentUser(null);
+            }
           }
           setIsLoading(false);
         } else {
           if (!isSettingInitial) {
             isSettingInitial = true;
             try {
+              // If main document doesn't exist, try to initialize it.
               await setDoc(doc(db, "appData", "main"), defaultData);
               setData(defaultData);
             } catch (e) {
-              console.error(e);
+              handleFirestoreError(e, OperationType.CREATE, "appData/main");
             }
             setIsLoading(false);
           }
         }
       },
       (error) => {
-        console.error(error);
-        setIsLoading(false);
+        handleFirestoreError(error, OperationType.GET, "appData/main");
       },
     );
-
-    return unsub;
-  }, []);
+    
+    return () => unsub();
+  }, [firebaseUser]);
 
   useEffect(() => {
     if (currentUser) {
@@ -140,7 +183,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await setDoc(doc(db, "appData", "main"), newData);
     } catch (e) {
-      console.error("Failed to sync to firebase:", e);
+      handleFirestoreError(e, OperationType.UPDATE, "appData/main");
     }
   };
 
@@ -149,7 +192,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await setDoc(doc(db, "appData", "main"), newData);
     } catch (e) {
-      console.error("Failed to sync to firebase:", e);
+      handleFirestoreError(e, OperationType.UPDATE, "appData/main");
     }
   };
 

@@ -10,6 +10,7 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Download, Upload, Moon, Sun, Palette } from "lucide-react";
 import { UsersManagement } from "./UsersManagement";
+import { JarvisTransition } from "../components/JarvisTransition";
 
 export const Settings: React.FC = () => {
   const { data, updateData, resetData, currentUser } = useAppContext();
@@ -113,7 +114,8 @@ export const Settings: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto min-h-0 pt-2">
-        {activeTab === "theme" && (
+        <JarvisTransition pageKey={activeTab} mode="tab">
+          {activeTab === "theme" && (
           <Card>
             <CardHeader>
               <CardTitle>Tampilan Tema</CardTitle>
@@ -406,7 +408,8 @@ export const Settings: React.FC = () => {
           </Card>
         )}
 
-        {activeTab === "users" && <UsersManagement />}
+          {activeTab === "users" && <UsersManagement />}
+        </JarvisTransition>
       </div>
     </div>
   );

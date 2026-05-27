@@ -35,14 +35,16 @@ export type Item = {
   id: string;
   sku: string;
   name: string;
+  imageUrl?: string;
   categoryId: string;
   unitId: string;
   stock: number;
+  unbatchedStock?: number;
   minStock: number;
   sellingPrice?: number;
   expiryDate?: string;
   batchNumber?: string;
-  batches?: { batchNumber: string; expiryDate: string }[];
+  batches?: { batchNumber: string; expiryDate: string; stock?: number }[];
   supplierId?: string;
   altSupplierId?: string;
   alternateUnits?: { unitId: string; conversionRate: number }[];
@@ -64,6 +66,8 @@ export type Transaction = {
   notes: string;
   userId: string;
   invoiceId?: string; // Link to invoice
+  returnDate?: string;
+  returnNote?: string;
 };
 
 export type PurchaseInvoiceStatus = 'COMPLETED' | 'CANCELED' | 'RETURNED';

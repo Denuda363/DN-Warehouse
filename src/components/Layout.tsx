@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { useAppContext } from "../store/AppContext";
 import { Button } from "./ui/Button";
+import { JarvisTransition } from "./JarvisTransition";
 import {
   LayoutDashboard,
   ArrowRightLeft,
@@ -13,6 +15,10 @@ import {
   Bell,
   Menu,
   FileText,
+  X,
+  AlertTriangle,
+  Calendar,
+  History,
 } from "lucide-react";
 
 export const Layout: React.FC<{
@@ -275,7 +281,14 @@ export const Layout: React.FC<{
           </div>
 
           <button
-            onClick={() => setCurrentUser(null)}
+            onClick={async () => {
+              try {
+                 const { auth } = await import("../firebase");
+                 const { signOut } = await import("firebase/auth");
+                 await signOut(auth);
+              } catch(e){}
+              setCurrentUser(null);
+            }}
             className={`relative group flex items-center px-4 py-3 min-h-[44px] transition-all rounded-lg hover:bg-slate-500/5`}
             style={{ color: "currentColor", opacity: 0.7 }}
             title="Logout"
@@ -332,102 +345,233 @@ export const Layout: React.FC<{
           </button>
 
           <div className="flex items-center gap-6">
-            <div className="relative">
+            <div>
               <button
-                className="p-2 relative rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                onClick={() => setShowNotifications(!showNotifications)}
+                className={`p-2.5 relative rounded-xl transition-all duration-200 active:scale-95 ${
+                  totalNotifs > 0
+                    ? "text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-950/40 ring-2 ring-rose-500/20 shadow-md shadow-rose-500/10"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
+                onClick={() => setShowNotifications(true)}
+                title="Buka Panel Notifikasi"
               >
-                <Bell className="w-5 h-5" />
+                <Bell className={`w-5 h-5 ${totalNotifs > 0 ? "animate-bounce" : ""}`} style={{ animationDuration: "2.5s" }} />
                 {totalNotifs > 0 && (
-                  <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow ring-2 ring-white dark:ring-slate-900">
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-[10px] font-extrabold text-white shadow-lg ring-2 ring-white dark:ring-slate-900 animate-pulse">
                     {totalNotifs > 99 ? "99+" : totalNotifs}
                   </span>
                 )}
               </button>
-
-              {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 overflow-hidden flex flex-col max-h-[80vh]">
-                  <div className="p-3 border-b dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center shrink-0">
-                    <span className="font-semibold text-sm">
-                      Notifikasi ({totalNotifs})
-                    </span>
-                    <button
-                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
-                      onClick={() => setShowNotifications(false)}
-                    >
-                      Tutup
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                    {lowStockItems.map((item) => (
-                      <div
-                        key={`ls-${item.id}`}
-                        className="p-3 bg-red-50 dark:bg-rose-900/10 rounded-lg border border-red-100 dark:border-rose-900/30 text-sm"
-                      >
-                        <span className="font-bold text-rose-600 dark:text-rose-400 block mb-1">
-                          ⚠️ Stok Menipis
-                        </span>
-                        <span className="text-slate-600 dark:text-slate-300">
-                          {item.name} (Sisa: {item.stock})
-                        </span>
-                      </div>
-                    ))}
-                    {expiringItems.map((item) => (
-                      <div
-                        key={`exp-${item.id}`}
-                        className="p-3 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-100 dark:border-orange-900/30 text-sm"
-                      >
-                        <span className="font-bold text-orange-600 dark:text-orange-400 block mb-1">
-                          ⏳ Akan Expired
-                        </span>
-                        <span className="text-slate-600 dark:text-slate-300">
-                          {item.name}{" "}
-                          {item.batchNumber
-                            ? `(Batch: ${item.batchNumber})`
-                            : ""}{" "}
-                          - Exp: {item.expiryDate}
-                        </span>
-                      </div>
-                    ))}
-                    {recentTxs.map((tx) => {
-                      const item = data.items.find((i) => i.id === tx.itemId);
-                      const isOut = tx.type === "OUT";
-                      return (
-                        <div
-                          key={`tx-${tx.id}`}
-                          className={`p-3 rounded-lg border text-sm ${isOut ? "bg-indigo-50 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-900/30" : "bg-emerald-50 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/30"}`}
-                        >
-                          <div
-                            className={`font-bold mb-1 ${isOut ? "text-indigo-600 dark:text-indigo-400" : "text-emerald-600 dark:text-emerald-400"}`}
-                          >
-                            {isOut ? "📦 Barang Keluar" : "📥 Barang Masuk"} -{" "}
-                            {new Date(tx.date).toLocaleDateString()}
-                          </div>
-                          <div className="text-slate-600 dark:text-slate-300">
-                            {isOut ? "-" : "+"}
-                            {tx.qty} {item?.name}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {totalNotifs === 0 && (
-                      <div className="px-4 py-8 text-center text-slate-500 text-sm flex flex-col items-center">
-                        <Bell className="w-8 h-8 mb-2 opacity-20" />
-                        Belum ada notifikasi
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </header>
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 bg-slate-50/50 dark:bg-slate-950/50 relative">
-          <div className="max-w-7xl mx-auto h-full">{children}</div>
+          <div className="max-w-7xl mx-auto h-full">
+            <JarvisTransition pageKey={currentPath}>
+              {children}
+            </JarvisTransition>
+          </div>
         </main>
       </div>
+
+      {/* Floating Notification Drawer Panel */}
+      <AnimatePresence>
+        {showNotifications && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowNotifications(false)}
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-[2px] z-50 transition-opacity"
+            />
+            
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "100%", opacity: 0.95 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "100%", opacity: 0.95 }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="fixed top-0 right-0 h-full w-full max-w-sm sm:max-w-md bg-white dark:bg-slate-900 shadow-2xl z-50 flex flex-col border-l border-slate-200 dark:border-slate-800"
+            >
+              {/* Header */}
+              <div className="p-4 border-b border-rose-100 dark:border-slate-800 bg-rose-600 text-white dark:bg-rose-950 flex justify-between items-center shrink-0 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-white/20 dark:bg-rose-900/30 rounded-lg">
+                    <Bell className="w-5 h-5 text-white animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base leading-none">Pusat Notifikasi</h3>
+                    <p className="text-[10px] text-rose-100 dark:text-rose-400 mt-1">{totalNotifs} Peringatan Aktif</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowNotifications(false)}
+                  className="p-1.5 rounded-lg text-rose-100 hover:text-white hover:bg-rose-700 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Filtering / Summary Grid */}
+              <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-slate-800 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 py-3 shrink-0">
+                <div>
+                  <div className="font-bold text-rose-600 dark:text-rose-400 text-sm">{lowStockItems.length}</div>
+                  <div>Stok Menipis</div>
+                </div>
+                <div>
+                  <div className="font-bold text-orange-500 dark:text-orange-400 text-sm">{expiringItems.length}</div>
+                  <div>Hampir Expired</div>
+                </div>
+                <div>
+                  <div className="font-bold text-indigo-600 dark:text-indigo-400 text-sm">{recentTxs.length}</div>
+                  <div>Arus Baru</div>
+                </div>
+              </div>
+
+              {/* List Content */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30 dark:bg-slate-950/20 custom-scrollbar">
+                {/* Low Stock Section */}
+                {lowStockItems.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                      <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                      Stok Menipis ({lowStockItems.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {lowStockItems.map((item) => (
+                        <div
+                          key={`ls-${item.id}`}
+                          className="p-3 bg-red-500/5 dark:bg-rose-950/25 rounded-xl border border-red-200/50 dark:border-rose-900/40 text-xs flex gap-3 shadow-xs hover:border-red-300 dark:hover:border-rose-800 transition-colors"
+                        >
+                          <div className="p-2 bg-red-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 rounded-lg self-start">
+                            <AlertTriangle className="w-4 h-4 animate-bounce" style={{ animationDuration: '3s' }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-bold text-slate-800 dark:text-stone-200 block truncate">
+                              {item.name}
+                            </span>
+                            <span className="text-slate-500 dark:text-slate-400 block mt-0.5 font-mono text-[10px]">
+                              SKU: {item.sku}
+                            </span>
+                            <span className="text-rose-600 dark:text-rose-400 font-bold block mt-1 font-semibold">
+                              Sisa: {item.stock} / Min: {item.minStock}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Expiring Items Section */}
+                {expiringItems.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                      Masa Expired Dekat ({expiringItems.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {expiringItems.map((item) => (
+                        <div
+                          key={`exp-${item.id}`}
+                          className="p-3 bg-orange-500/5 dark:bg-amber-950/25 rounded-xl border border-orange-200/50 dark:border-amber-900/40 text-xs flex gap-3 shadow-xs hover:border-orange-300 dark:hover:border-amber-800 transition-colors"
+                        >
+                          <div className="p-2 bg-orange-100 dark:bg-amber-900/50 text-orange-600 dark:text-orange-400 rounded-lg self-start">
+                            <Calendar className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-bold text-slate-800 dark:text-stone-200 block truncate">
+                              {item.name}
+                            </span>
+                            <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-[10px]">
+                              {item.batchNumber ? `Batch: ${item.batchNumber}` : "Batch Utama"}
+                            </p>
+                            <span className="text-orange-600 dark:text-orange-400 block mt-1 font-bold">
+                              Exp: {item.expiryDate}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Activities */}
+                {recentTxs.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                      <History className="w-3.5 h-3.5 text-indigo-500" />
+                      Arus Barang Terbaru
+                    </h4>
+                    <div className="space-y-2">
+                      {recentTxs.map((tx) => {
+                        const item = data.items.find((i) => i.id === tx.itemId);
+                        const isOut = tx.type === "OUT";
+                        return (
+                          <div
+                            key={`tx-${tx.id}`}
+                            className={`p-3 rounded-xl border text-xs flex gap-3 shadow-xs hover:shadow transition-shadow ${
+                              isOut
+                                ? "bg-indigo-505/5 dark:bg-indigo-950/20 border-indigo-200/50 dark:border-indigo-900/30"
+                                : "bg-emerald-505/5 dark:bg-emerald-950/20 border-emerald-200/50 dark:border-emerald-900/30"
+                            }`}
+                          >
+                            <div
+                              className={`p-2 rounded-lg self-start ${
+                                isOut
+                                  ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"
+                                  : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
+                              }`}
+                            >
+                              {isOut ? <PackageMinus className="w-4 h-4" /> : <PackagePlus className="w-4 h-4" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <span className="font-bold text-slate-700 dark:text-stone-300 block truncate">
+                                {isOut ? "Barang Keluar (POS)" : "Barang Masuk (Inbound)"}
+                              </span>
+                              <span className="text-slate-600 dark:text-slate-400 block text-[11px] mt-0.5 font-medium">
+                                {isOut ? "-" : "+"} {tx.qty} {item?.name}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block mt-1">
+                                {new Date(tx.date).toLocaleString("id-ID", {
+                                  dateStyle: "short",
+                                  timeStyle: "short",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {totalNotifs === 0 && (
+                  <div className="py-16 text-center text-slate-400 dark:text-slate-500 text-sm flex flex-col items-center justify-center">
+                    <Bell className="w-12 h-12 mb-3 text-slate-300 dark:text-slate-700 animate-bounce" />
+                    <p className="font-semibold text-slate-700 dark:text-slate-300">Aman Terkendali!</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Sistem prima, semua stok aman.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Panel */}
+              <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex gap-2 shrink-0">
+                <Button
+                  className="w-full bg-slate-900 hover:bg-black text-white dark:bg-slate-800 dark:hover:bg-slate-700 font-bold"
+                  onClick={() => setShowNotifications(false)}
+                >
+                  Tutup Panel
+                </Button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

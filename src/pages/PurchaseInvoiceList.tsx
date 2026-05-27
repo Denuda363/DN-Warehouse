@@ -38,6 +38,8 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
 
   const [returnModal, setReturnModal] = useState<{ isOpen: boolean, invoiceId: string, itemId: string, maxQty: number } | null>(null);
   const [returnQty, setReturnQty] = useState<number>(0);
+  const [returnDate, setReturnDate] = useState<string>('');
+  const [returnNote, setReturnNote] = useState<string>('');
   const [expandedInvoiceId, setExpandedInvoiceId] = useState<string | null>(null);
 
   const handleCancel = (invoice: PurchaseInvoice) => {
@@ -83,6 +85,8 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
   const openReturnModal = (invoiceId: string, itemId: string, maxQty: number) => {
     setReturnModal({ isOpen: true, invoiceId, itemId, maxQty });
     setReturnQty(1);
+    setReturnDate(new Date().toISOString().substring(0, 10)); // Default to YYYY-MM-DD
+    setReturnNote('');
   };
 
   const executeReturn = () => {
@@ -120,7 +124,7 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
 
     const returnTx = {
       id: `tx-out-ret-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      date: new Date().toISOString(),
+      date: returnDate ? new Date(returnDate).toISOString() : new Date().toISOString(),
       type: 'OUT' as const,
       itemId: itemId,
       qty: qty,
@@ -128,6 +132,8 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
       notes: `Return Faktur: ${invoice.invoiceNo}`,
       userId: currentUser?.id || 'unknown',
       invoiceId: invoice.id,
+      returnDate: returnDate || new Date().toISOString().substring(0, 10),
+      returnNote: returnNote || '',
     };
 
     const updatedInvoices = data.purchaseInvoices.map(inv => {
@@ -444,6 +450,24 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
                     value={returnQty || ''}
                     onChange={(e) => setReturnQty(Math.min(returnModal.maxQty, Math.max(1, Number(e.target.value))))}
                     autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Tanggal Return</label>
+                  <Input 
+                    type="date"
+                    value={returnDate}
+                    onChange={(e) => setReturnDate(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 block">Keterangan Return</label>
+                  <Input 
+                    placeholder="Contoh: Barang rusak, salah ukuran"
+                    value={returnNote}
+                    onChange={(e) => setReturnNote(e.target.value)}
                   />
                 </div>
                 

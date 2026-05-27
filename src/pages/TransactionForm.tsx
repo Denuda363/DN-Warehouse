@@ -77,9 +77,9 @@ export const TransactionForm: React.FC<{ type: 'IN' | 'OUT' }> = ({ type }) => {
       <Card>
         <CardContent className="p-6">
           {success && (
-            <div className="mb-6 p-4 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400">
-              <CheckCircle2 className="w-5 h-5 mr-2" />
-              Transaksi berhasil dicatat dan stok telah diupdate.
+            <div className="mb-6 p-4 rounded-xl bg-emerald-600 border border-emerald-500 text-white flex items-center shadow-lg shadow-emerald-500/20 font-bold">
+              <CheckCircle2 className="w-5 h-5 mr-3 shrink-0 animate-bounce" />
+              <span>Transaksi berhasil dicatat dan stok telah diupdate!</span>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">

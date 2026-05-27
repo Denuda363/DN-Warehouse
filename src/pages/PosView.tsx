@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Search, History, UserSquare, Users, CreditCard, ScanLine, Save, ArrowLeft, Edit, Trash2, RotateCcw, X, FileText } from 'lucide-react';
+import { Search, History, UserSquare, Users, CreditCard, ScanLine, Save, ArrowLeft, Edit, Trash2, RotateCcw, X, FileText, LayoutGrid, List } from 'lucide-react';
 import { Item, Transaction } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -11,6 +11,7 @@ type CartItem = Item & {
   cartQty: number; // total base units
   inputQty: number; // qty in selected unit
   selectedUnitId: string;
+  selectedBatch?: string; // "unbatched" or specific batch number
 };
 
 export const PosView: React.FC = () => {
@@ -18,6 +19,7 @@ export const PosView: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [posLayout, setPosLayout] = useState<'grid' | 'list'>('grid');
 
   const [viewMode, setViewMode] = useState<'pos' | 'history'>('pos');
   const [penyedia, setPenyedia] = useState<string>('');
@@ -43,9 +45,8 @@ export const PosView: React.FC = () => {
       const currentUserCategories = currentUser?.allowedCategoryIds || [];
       const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
       if (hasCategoryRestriction && !currentUserCategories.includes(item.categoryId)) {
-         return false;
+        return false;
       }
-
       const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || item.sku.toLowerCase().includes(searchTerm.toLowerCase());
       if (!matchSearch) return false;
       if (activeCategory !== 'Semua') {
@@ -55,6 +56,15 @@ export const PosView: React.FC = () => {
       return true;
     });
   }, [data.items, data.categories, searchTerm, activeCategory, currentUser]);
+
+  const getSelectedBatchStock = (item: CartItem): number => {
+    if (!item.selectedBatch || item.selectedBatch === 'unbatched') {
+      const totalBatchStock = item.batches?.reduce((acc, b) => acc + (b.stock || 0), 0) || 0;
+      return item.unbatchedStock !== undefined ? item.unbatchedStock : Math.max(0, item.stock - totalBatchStock);
+    }
+    const match = item.batches?.find(b => b.batchNumber === item.selectedBatch);
+    return match ? (match.stock ?? 0) : 0;
+  };
 
   const getConversionRate = (item: Item, unitId: string) => {
      if (unitId === item.unitId) return 1;
@@ -66,21 +76,70 @@ export const PosView: React.FC = () => {
     setCart(prev => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) {
-        if (existing.cartQty >= item.stock) return prev; // Cannot add more than stock
-        const newCartQty = existing.cartQty + 1 * getConversionRate(item, existing.selectedUnitId);
-        if (newCartQty > item.stock) return prev;
-        return prev.map(i => i.id === item.id ? { ...i, inputQty: i.inputQty + 1, cartQty: newCartQty } : i);
+        const availableStock = getSelectedBatchStock(existing);
+        const conversion = getConversionRate(item, existing.selectedUnitId);
+        const totalNeeded = existing.cartQty + 1 * conversion;
+        if (totalNeeded > availableStock) {
+          alert(`Stok tidak mencukupi untuk batch "${existing.selectedBatch === 'unbatched' ? 'Tanpa Batch' : existing.selectedBatch}"!`);
+          return prev;
+        }
+        return prev.map(i => i.id === item.id ? { ...i, inputQty: i.inputQty + 1, cartQty: totalNeeded } : i);
       }
-      if (item.stock < 1) return prev;
-      return [...prev, { ...item, inputQty: 1, cartQty: 1, selectedUnitId: item.unitId }];
+      
+      let initialBatch = 'unbatched';
+      const totalBatchStock = item.batches?.reduce((acc, b) => acc + (b.stock || 0), 0) || 0;
+      const unbatchedStock = item.unbatchedStock !== undefined ? item.unbatchedStock : Math.max(0, item.stock - totalBatchStock);
+      
+      if (unbatchedStock === 0 && item.batches && item.batches.length > 0) {
+        const firstAvailableBatch = item.batches.find(b => (b.stock ?? 0) > 0);
+        if (firstAvailableBatch) {
+          initialBatch = firstAvailableBatch.batchNumber;
+        }
+      }
+
+      const tempCartItem: CartItem = { 
+        ...item, 
+        inputQty: 1, 
+        cartQty: 1, 
+        selectedUnitId: item.unitId,
+        selectedBatch: initialBatch
+      };
+
+      const availableStock = getSelectedBatchStock(tempCartItem);
+      if (availableStock < 1) {
+        alert('Stok untuk produk ini habis!');
+        return prev;
+      }
+
+      return [...prev, tempCartItem];
     });
+  };
+
+  const updateCartBatch = (id: string, batchNo: string) => {
+    setCart(prev => prev.map(i => {
+      if (i.id === id) {
+        const itemWithNewBatch = { ...i, selectedBatch: batchNo };
+        const conversion = getConversionRate(itemWithNewBatch, itemWithNewBatch.selectedUnitId);
+        const availableStock = getSelectedBatchStock(itemWithNewBatch);
+        const maxInputQty = Math.floor(availableStock / conversion);
+        const val = Math.min(itemWithNewBatch.inputQty, maxInputQty);
+        const finalQty = maxInputQty > 0 ? Math.max(1, val) : 0;
+        return { 
+          ...itemWithNewBatch, 
+          inputQty: finalQty, 
+          cartQty: finalQty * conversion 
+        };
+      }
+      return i;
+    }));
   };
 
   const updateCartQty = (id: string, qty: number) => {
     setCart(prev => prev.map(i => {
       if (i.id === id) {
         const conversion = getConversionRate(i, i.selectedUnitId);
-        const maxInputQty = Math.floor(i.stock / conversion);
+        const availableStock = getSelectedBatchStock(i);
+        const maxInputQty = Math.floor(availableStock / conversion);
         const validQty = Math.max(1, Math.min(qty, maxInputQty));
         return { ...i, inputQty: validQty, cartQty: validQty * conversion };
       }
@@ -92,7 +151,8 @@ export const PosView: React.FC = () => {
     setCart(prev => prev.map(i => {
       if (i.id === id) {
         const conversion = getConversionRate(i, unitId);
-        const maxInputQty = Math.floor(i.stock / conversion);
+        const availableStock = getSelectedBatchStock(i);
+        const maxInputQty = Math.floor(availableStock / conversion);
         const validQty = Math.min(i.inputQty, maxInputQty);
         return { ...i, selectedUnitId: unitId, inputQty: validQty, cartQty: validQty * conversion };
       }
@@ -113,25 +173,60 @@ export const PosView: React.FC = () => {
     const date = `${txDate}T${timeString}`;
 
     // Create transactions for each out
-    const newTxs: Transaction[] = cart.map(item => ({
-      id: `tx-out-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      groupId,
-      date,
-      type: 'OUT',
-      itemId: item.id,
-      qty: item.cartQty,
-      displayUnitId: item.selectedUnitId,
-      displayQty: item.inputQty,
-      conversionRate: getConversionRate(item, item.selectedUnitId),
-      notes: penyedia ? `Penyedia: ${penyedia}` : 'POS Transaction',
-      userId: currentUser?.id || 'unknown'
-    }));
+    const newTxs: Transaction[] = cart.map(item => {
+      const selectedBatchStr = item.selectedBatch === 'unbatched' ? 'Tanpa Batch' : `Batch ${item.selectedBatch}`;
+      const noteStr = penyedia 
+        ? `Penyedia: ${penyedia} | ${selectedBatchStr}` 
+        : `POS Transaction (${selectedBatchStr})`;
+        
+      return {
+        id: `tx-out-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        groupId,
+        date,
+        type: 'OUT',
+        itemId: item.id,
+        qty: item.cartQty,
+        displayUnitId: item.selectedUnitId,
+        displayQty: item.inputQty,
+        conversionRate: getConversionRate(item, item.selectedUnitId),
+        notes: noteStr,
+        userId: currentUser?.id || 'unknown'
+      };
+    });
 
     // Deduct stock
     const newItems = data.items.map(item => {
       const inCart = cart.find(c => c.id === item.id);
       if (inCart) {
-        return { ...item, stock: item.stock - inCart.cartQty };
+        const qtyToDeduct = inCart.cartQty;
+        const selectedBatch = inCart.selectedBatch || 'unbatched';
+        
+        // Calculate updated unbatchedStock
+        const totalBatchStock = item.batches?.reduce((acc, b) => acc + (b.stock || 0), 0) || 0;
+        const currentUnbatched = item.unbatchedStock !== undefined ? item.unbatchedStock : Math.max(0, item.stock - totalBatchStock);
+        
+        let newUnbatched = currentUnbatched;
+        let newBatches = item.batches ? [...item.batches] : [];
+        
+        if (selectedBatch === 'unbatched') {
+          newUnbatched = Math.max(0, currentUnbatched - qtyToDeduct);
+        } else {
+          newBatches = newBatches.map(b => {
+            if (b.batchNumber === selectedBatch) {
+              return { ...b, stock: Math.max(0, (b.stock || 0) - qtyToDeduct) };
+            }
+            return b;
+          });
+        }
+        
+        // Return updated item with updated individual stocks and total stock
+        const updatedTotalStock = Math.max(0, item.stock - qtyToDeduct);
+        return {
+          ...item,
+          unbatchedStock: newUnbatched,
+          batches: newBatches,
+          stock: updatedTotalStock
+        };
       }
       return item;
     });
@@ -415,71 +510,113 @@ export const PosView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Categories */}
-              <div className="flex gap-2 overflow-x-auto pb-2 shrink-0 hide-scrollbar pt-1">
-                <button
-                  onClick={() => setActiveCategory('Semua')}
-                  className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors shadow-sm ${
-                    activeCategory === 'Semua' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-950 dark:border-slate-800'
-                  }`}
-                >
-                  Semua
-                </button>
-                {data.categories.filter(cat => {
-                   const currentUserCategories = currentUser?.allowedCategoryIds || [];
-                   const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
-                   return !hasCategoryRestriction || currentUserCategories.includes(cat.id);
-                }).map(cat => (
+              {/* Categories & Layout Toggle */}
+              <div className="flex gap-2 justify-between items-center shrink-0">
+                <div className="flex gap-2 overflow-x-auto pb-2 flex-1 hide-scrollbar pt-1">
                   <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.name)}
-                    className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors shadow-sm ${
-                      activeCategory === cat.name ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-950 dark:border-slate-800'
+                    onClick={() => setActiveCategory('Semua')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors shadow-sm ${
+                      activeCategory === 'Semua' ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300'
                     }`}
                   >
-                    {cat.name}
+                    Semua
                   </button>
-                ))}
+                  {data.categories.filter(cat => {
+                     const currentUserCategories = currentUser?.allowedCategoryIds || [];
+                     const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
+                     return !hasCategoryRestriction || currentUserCategories.includes(cat.id);
+                  }).map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.name)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors shadow-sm ${
+                        activeCategory === cat.name ? 'bg-indigo-600 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 dark:bg-slate-950 dark:border-slate-800 dark:text-slate-300'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-1 rounded-lg shadow-sm shrink-0 gap-1 mb-2">
+                  <button
+                    onClick={() => setPosLayout('grid')}
+                    className={`p-1.5 rounded-md transition-colors ${posLayout === 'grid' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900'}`}
+                    title="Grid View"
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setPosLayout('list')}
+                    className={`p-1.5 rounded-md transition-colors ${posLayout === 'list' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400 font-bold' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-900'}`}
+                    title="List View"
+                  >
+                    <List className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
-              {/* Product Grid */}
+              {/* Product Grid / List Container */}
               <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-inner">
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                  {filteredItems.map((item, idx) => {
-                    const colorClass = colors[idx % colors.length];
-                    const price = item.sellingPrice || 15000; // Mock default
-                    
-                    return (
-                      <div 
-                        key={item.id} 
-                        onClick={() => addToCart(item)}
-                        className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow flex flex-col group"
-                      >
-                        <div className={`h-24 ${colorClass} m-2 rounded-lg flex items-center justify-center relative overflow-hidden group-hover:opacity-90 transition-opacity`}>
-                          <span className="text-3xl font-bold text-white/90 drop-shadow-sm">{getInitials(item.name)}</span>
-                          {/* Optional: label pill */}
-                          {idx % 5 === 0 && (
-                             <div className="absolute top-1 right-1 bg-green-500 text-white text-[9px] font-bold px-1.5 rounded-sm">Okt 27</div>
-                          )}
-                        </div>
-                        <div className="p-2 pt-1 flex flex-col flex-1 text-sm">
-                          <div className="font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight flex-1">
-                            {item.name}
-                          </div>
-                          <div className="flex items-center justify-between mt-2">
-                            <div className="font-bold text-indigo-600 dark:text-indigo-400">
-                              Rp <br className="hidden lg:block"/>
-                              {new Intl.NumberFormat('id-ID').format(price)}
+                {posLayout === 'grid' ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+                    {filteredItems.map((item, idx) => {
+                      const colorClass = colors[idx % colors.length];
+                      return (
+                        <div 
+                          key={item.id} 
+                          onClick={() => addToCart(item)}
+                          className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden cursor-pointer hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-500 transition-all flex flex-col group p-1.5"
+                        >
+                          <div className={`h-14 ${colorClass} rounded-md flex items-center justify-center relative overflow-hidden group-hover:opacity-90 transition-opacity shrink-0`}>
+                            <span className="text-lg font-bold text-white/90 drop-shadow-sm">{getInitials(item.name)}</span>
+                            <div className="absolute bottom-1 right-1 bg-black/40 text-white text-[8px] px-1 py-0.5 rounded font-mono">
+                              {item.sku || '-'}
                             </div>
-                            <div className="bg-slate-100 text-slate-500 dark:bg-slate-800 text-[10px] font-bold px-2 py-1 rounded">
+                          </div>
+                          <div className="pt-1.5 flex flex-col flex-1">
+                            <div className="font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight text-[11px] flex-1">
+                              {item.name}
+                            </div>
+                            <div className="flex items-center justify-between mt-1 text-[10px]">
+                              <span className="text-slate-500 dark:text-slate-400">Stok:</span>
+                              <span className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold px-1.5 py-0.2 rounded font-mono">
+                                {item.stock}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                    {filteredItems.map((item, idx) => {
+                      const colorClass = colors[idx % colors.length];
+                      return (
+                        <div 
+                          key={item.id} 
+                          onClick={() => addToCart(item)}
+                          className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 flex items-center gap-2 cursor-pointer hover:shadow-sm hover:border-indigo-400 dark:hover:border-indigo-500 transition-all group"
+                        >
+                          <div className={`w-10 h-10 rounded-md ${colorClass} flex items-center justify-center shrink-0 relative overflow-hidden`}>
+                            <span className="text-xs font-bold text-white">{getInitials(item.name)}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-slate-800 dark:text-slate-200 text-[11px] truncate leading-tight">{item.name}</h4>
+                            <p className="text-[9px] text-slate-400 font-mono mt-0.5">{item.sku || '-'}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-[9px] text-slate-400">Stok</div>
+                            <div className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-[10px] font-bold px-1.5 py-0.5 rounded font-mono mt-0.5">
                               {item.stock}
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -605,8 +742,26 @@ export const PosView: React.FC = () => {
                 <div key={item.id} className="flex gap-3 justify-between items-start border-b dark:border-slate-800 pb-3">
                    <div className="flex-1">
                      <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">{item.name}</h4>
-                     <p className="text-indigo-600 dark:text-indigo-400 font-bold text-sm mt-1">
-                       Rp {new Intl.NumberFormat('id-ID').format(item.sellingPrice || 15000)}
+                     {/* Batch Selector Dropdown */}
+                     <div className="mt-2 text-[11px]">
+                       <label className="block text-[9px] text-indigo-600 dark:text-indigo-400 font-bold mb-0.5">Pilih Batch:</label>
+                       <select
+                         value={item.selectedBatch || 'unbatched'}
+                         onChange={(e) => updateCartBatch(item.id, e.target.value)}
+                         className="flex h-7 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 font-semibold text-slate-700 dark:text-slate-200"
+                       >
+                         <option value="unbatched">
+                           Tanpa Batch / Umum (Stok: {item.unbatchedStock !== undefined ? item.unbatchedStock : Math.max(0, (item.stock || 0) - (item.batches?.reduce((sum, b) => sum + (b.stock || 0), 0) || 0))})
+                         </option>
+                         {item.batches?.map(b => (
+                           <option key={b.batchNumber} value={b.batchNumber}>
+                             Batch: {b.batchNumber} (Stok: {b.stock ?? 0}{b.expiryDate ? `, Exp: ${b.expiryDate}` : ''})
+                           </option>
+                         ))}
+                       </select>
+                     </div>
+                     <p className="text-slate-400 dark:text-slate-500 text-xs mt-1 font-mono">
+                       SKU: {item.sku || '-'}
                      </p>
                      {item.alternateUnits && item.alternateUnits.length > 0 ? (
                         <select

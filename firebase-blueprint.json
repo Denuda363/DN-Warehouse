@@ -2,61 +2,26 @@
   "entities": {
     "AppData": {
       "title": "AppData",
-      "description": "The entire application state",
+      "description": "Singleton storing the entire application state (legacy architecture)",
       "type": "object",
       "properties": {
-        "users": {
-          "type": "array",
-          "description": "List of users"
-        },
-        "categories": {
-          "type": "array"
-        },
-        "units": {
-          "type": "array"
-        },
-        "suppliers": {
-          "type": "array"
-        },
-        "staffs": {
-          "type": "array"
-        },
-        "items": {
-          "type": "array"
-        },
-        "transactions": {
-          "type": "array"
-        },
-        "purchaseInvoices": {
-          "type": "array"
-        },
-        "theme": {
-          "type": "string"
-        },
-        "colorTheme": {
-          "type": "string"
-        },
-        "navBgColor": {
-          "type": "string"
-        },
-        "navTextColor": {
-          "type": "string"
-        },
-        "navIsTransparent": {
-          "type": "boolean"
-        },
-        "warehouseProfile": {
-          "type": "object"
-        }
+        "users": { "type": "array" },
+        "categories": { "type": "array" },
+        "units": { "type": "array" },
+        "suppliers": { "type": "array" },
+        "staffs": { "type": "array" },
+        "items": { "type": "array" },
+        "transactions": { "type": "array" },
+        "purchaseInvoices": { "type": "array" },
+        "theme": { "type": "string" },
+        "colorTheme": { "type": "string" }
       }
     }
   },
   "firestore": {
     "/appData/main": {
-      "schema": {
-        "$ref": "#/entities/AppData"
-      },
-      "description": "Singleton document containing all application data"
+      "schema": "AppData",
+      "description": "The central repository for the entire Gudang application."
     }
   }
 }

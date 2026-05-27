@@ -17,6 +17,7 @@ export const PurchaseReturnList: React.FC = () => {
     const searchLower = searchTerm.toLowerCase();
     
     return t.notes.toLowerCase().includes(searchLower) || 
+           (t.returnNote && t.returnNote.toLowerCase().includes(searchLower)) ||
            item?.name.toLowerCase().includes(searchLower) ||
            supplier?.name.toLowerCase().includes(searchLower);
   });
@@ -28,7 +29,7 @@ export const PurchaseReturnList: React.FC = () => {
           <div className="relative w-80">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
             <Input 
-              placeholder="Cari No. Faktur, Barang, Supplier..." 
+              placeholder="Cari No. Faktur, Barang, Supplier, Keterangan..." 
               className="pl-9"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -44,6 +45,7 @@ export const PurchaseReturnList: React.FC = () => {
                 <th className="px-4 py-3 font-medium">No. Faktur (Referensi)</th>
                 <th className="px-4 py-3 font-medium">Supplier</th>
                 <th className="px-4 py-3 font-medium">Nama Barang</th>
+                <th className="px-4 py-3 font-medium">Keterangan</th>
                 <th className="px-4 py-3 font-medium text-right">Qty Retur</th>
                 <th className="px-4 py-3 font-medium text-center">Petugas</th>
               </tr>
@@ -53,7 +55,10 @@ export const PurchaseReturnList: React.FC = () => {
                 const item = data.items.find(i => i.id === ret.itemId);
                 const supplier = data.suppliers.find(s => s.id === ret.supplierId);
                 const user = data.users.find(u => u.id === ret.userId);
-                const date = new Date(ret.date);
+                
+                const dateStr = ret.returnDate || ret.date;
+                const isOnlyDate = !!ret.returnDate;
+                const date = new Date(dateStr);
                 
                 // Extract invoice number from notes "Return Faktur: INV/..."
                 const invoiceNo = ret.notes.replace('Return Faktur: ', '');
@@ -61,9 +66,12 @@ export const PurchaseReturnList: React.FC = () => {
                 return (
                   <tr key={ret.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-4 py-3 whitespace-nowrap text-slate-700 dark:text-slate-300">
-                      {date.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {isOnlyDate 
+                        ? date.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })
+                        : date.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                      }
                     </td>
-                    <td className="px-4 py-3 font-medium">
+                    <td className="px-4 py-3 font-medium duration-150">
                       <div className="flex items-center text-orange-600 dark:text-orange-400">
                         <FileText className="w-4 h-4 mr-2" />
                         {invoiceNo}
@@ -74,6 +82,9 @@ export const PurchaseReturnList: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 font-medium">
                       {item ? `[${item.sku}] ${item.name}` : 'Unknown'}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 max-w-xs truncate" title={ret.returnNote || ''}>
+                      {ret.returnNote || '-'}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span className="font-bold text-orange-600 dark:text-orange-400">
@@ -88,7 +99,7 @@ export const PurchaseReturnList: React.FC = () => {
               })}
               {filteredReturns.length === 0 && (
                  <tr>
-                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                   <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                      Belum ada histori retur barang.
                    </td>
                  </tr>
