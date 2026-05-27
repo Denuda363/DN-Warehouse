@@ -26,7 +26,7 @@ export const Layout: React.FC<{
   currentPath: string;
   navigate: (p: string) => void;
 }> = ({ children, currentPath, navigate }) => {
-  const { currentUser, setCurrentUser, data } = useAppContext();
+  const { currentUser, setCurrentUser, data, logActivity } = useAppContext();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -282,6 +282,7 @@ export const Layout: React.FC<{
 
           <button
             onClick={async () => {
+              logActivity("Logout", `User ${currentUser?.username} logged out`);
               try {
                  const { auth } = await import("../firebase");
                  const { signOut } = await import("firebase/auth");

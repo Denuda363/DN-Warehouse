@@ -33,7 +33,7 @@ export const calculateReturnTotal = (inv: PurchaseInvoice) => {
 };
 
 export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = ({ onEdit }) => {
-  const { data, updateData, currentUser } = useAppContext();
+  const { data, updateData, currentUser, logActivity } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
 
   const [returnModal, setReturnModal] = useState<{ isOpen: boolean, invoiceId: string, itemId: string, maxQty: number } | null>(null);
@@ -75,6 +75,8 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
       inv.id === invoice.id ? { ...inv, status: 'CANCELED' as const } : inv
     );
 
+    logActivity("Batal Pembelian", `Membatalkan faktur pembelian ${invoice.invoiceNo}`);
+
     updateData({
       purchaseInvoices: updatedInvoices,
       items: updatedItems,
@@ -109,7 +111,8 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
     }
 
     // Process return: deduct stock and update returnedQty
-    const itemStock = data.items.find(i => i.id === itemId)?.stock || 0;
+    const itemTarget = data.items.find(i => i.id === itemId);
+    const itemStock = itemTarget?.stock || 0;
     if (qty > itemStock) {
       alert("Stok barang di gudang tidak mencukupi untuk return!");
       return;
@@ -156,6 +159,8 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
       };
     });
 
+    logActivity("Return Pembelian", `Return barang ${itemTarget?.name || itemId} sejumlah ${qty} dari faktur ${invoice.invoiceNo}`);
+
     updateData({
       purchaseInvoices: updatedInvoices,
       items: updatedItems,
@@ -166,6 +171,8 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
 
   const handleDelete = (id: string) => {
     if(!confirm("Hapus log faktur sepenuhnya? (Stok tidak akan di-revert secara otomatis!)")) return;
+    const invTarget = data.purchaseInvoices.find(i => i.id === id);
+    logActivity("Hapus Faktur", `Menghapus data faktur ${invTarget?.invoiceNo || id}`);
     updateData({
       purchaseInvoices: data.purchaseInvoices.filter(i => i.id !== id)
     });

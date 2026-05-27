@@ -55,10 +55,11 @@ const generateSkuForCategory = (categoryId: string, categories: Category[], item
 };
 
 export const MasterData: React.FC = () => {
-  const { data, updateData, currentUser } = useAppContext();
+  const { data, updateData, currentUser, logActivity } = useAppContext();
   const [activeTab, setActiveTab] = useState<
     "items" | "categories" | "units" | "suppliers" | "staffs" | "low-stock"
   >("items");
+
   const [searchTerm, setSearchTerm] = useState("");
 
   const [modalType, setModalType] = useState<
@@ -111,14 +112,19 @@ export const MasterData: React.FC = () => {
     if (!confirm("Hapus data ini?")) return;
 
     if (type === "items") {
+      logActivity("Hapus Item", `Menghapus item dengan ID ${id}`);
       updateData({ items: data.items.filter((i) => i.id !== id) });
     } else if (type === "categories") {
+      logActivity("Hapus Kategori", `Menghapus kategori dengan ID ${id}`);
       updateData({ categories: data.categories.filter((i) => i.id !== id) });
     } else if (type === "units") {
+      logActivity("Hapus Satuan", `Menghapus satuan dengan ID ${id}`);
       updateData({ units: data.units.filter((i) => i.id !== id) });
     } else if (type === "suppliers") {
+      logActivity("Hapus Supplier", `Menghapus supplier dengan ID ${id}`);
       updateData({ suppliers: data.suppliers.filter((i) => i.id !== id) });
     } else if (type === "staffs") {
+      logActivity("Hapus Staff", `Menghapus staff dengan ID ${id}`);
       updateData({ staffs: data.staffs.filter((i) => i.id !== id) });
     }
   };
@@ -154,8 +160,10 @@ export const MasterData: React.FC = () => {
     } as Item;
 
     if (isNew) {
+      logActivity("Tambah Item", `Menambahkan item baru: ${payload.name} (${payload.sku})`);
       updateData({ items: [payload, ...data.items] });
     } else {
+      logActivity("Edit Item", `Memperbarui item: ${payload.name} (${payload.sku})`);
       updateData({
         items: data.items.map((i) => (i.id === payload.id ? payload : i)),
       });
@@ -172,8 +180,10 @@ export const MasterData: React.FC = () => {
     } as Category;
 
     if (isNew) {
+      logActivity("Tambah Kategori", `Menambahkan kategori baru: ${payload.name}`);
       updateData({ categories: [payload, ...data.categories] });
     } else {
+      logActivity("Edit Kategori", `Memperbarui kategori: ${payload.name}`);
       updateData({
         categories: data.categories.map((i) =>
           i.id === payload.id ? payload : i,
@@ -192,8 +202,10 @@ export const MasterData: React.FC = () => {
     } as Unit;
 
     if (isNew) {
+      logActivity("Tambah Satuan", `Menambahkan satuan baru: ${payload.name}`);
       updateData({ units: [payload, ...data.units] });
     } else {
+      logActivity("Edit Satuan", `Memperbarui satuan: ${payload.name}`);
       updateData({
         units: data.units.map((i) => (i.id === payload.id ? payload : i)),
       });
@@ -210,8 +222,10 @@ export const MasterData: React.FC = () => {
     } as Supplier;
 
     if (isNew) {
+      logActivity("Tambah Supplier", `Menambahkan supplier baru: ${payload.name}`);
       updateData({ suppliers: [payload, ...data.suppliers] });
     } else {
+      logActivity("Edit Supplier", `Memperbarui supplier: ${payload.name}`);
       updateData({
         suppliers: data.suppliers.map((i) =>
           i.id === payload.id ? payload : i,
@@ -230,8 +244,10 @@ export const MasterData: React.FC = () => {
     } as Staff;
 
     if (isNew) {
+      logActivity("Tambah Staff", `Menambahkan staff baru: ${payload.name}`);
       updateData({ staffs: [payload, ...data.staffs] });
     } else {
+      logActivity("Edit Staff", `Memperbarui staff: ${payload.name}`);
       updateData({
         staffs: data.staffs.map((i) => (i.id === payload.id ? payload : i)),
       });

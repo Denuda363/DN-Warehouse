@@ -15,7 +15,7 @@ type CartItem = Item & {
 };
 
 export const PosView: React.FC = () => {
-  const { data, updateData, currentUser } = useAppContext();
+  const { data, updateData, currentUser, logActivity } = useAppContext();
   const [activeCategory, setActiveCategory] = useState<string>('Semua');
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -194,6 +194,8 @@ export const PosView: React.FC = () => {
       };
     });
 
+    logActivity("Transaksi Keluar (POS)", `Mengeluarkan ${cart.length} jenis barang. Penyedia: ${penyedia || '-'}`);
+
     // Deduct stock
     const newItems = data.items.map(item => {
       const inCart = cart.find(c => c.id === item.id);
@@ -243,6 +245,12 @@ export const PosView: React.FC = () => {
 
   const handleDeleteHistory = (tx: Transaction) => {
     if (!confirm('Hapus transaksi ini dan kembalikan stok?')) return;
+    
+    // Find item details
+    const item = data.items.find(i => i.id === tx.itemId);
+    const itemName = item ? item.name : tx.itemId;
+    logActivity("Hapus Riwayat Transaksi", `Menghapus transaksi ${tx.type === 'IN' ? 'Masuk' : 'Keluar'} untuk item ${itemName}`);
+
     const newItems = data.items.map(item => {
       if (item.id === tx.itemId) {
         return { ...item, stock: item.stock + tx.qty };
@@ -565,22 +573,29 @@ export const PosView: React.FC = () => {
                       return (
                         <div 
                           key={item.id} 
-                          onClick={() => addToCart(item)}
-                          className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden cursor-pointer hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-500 transition-all flex flex-col group p-1.5"
+                          onClick={() => { if (item.stock > 0) addToCart(item); }}
+                          className={`bg-white dark:bg-slate-950 border rounded-lg overflow-hidden relative flex flex-col p-1.5 ${item.stock > 0 ? 'border-slate-200 dark:border-slate-800 cursor-pointer hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-500 transition-all group' : 'border-red-200 dark:border-red-900/50 cursor-not-allowed opacity-70 grayscale-[50%]'}`}
                         >
-                          <div className={`h-14 ${colorClass} rounded-md flex items-center justify-center relative overflow-hidden group-hover:opacity-90 transition-opacity shrink-0`}>
+                          <div className={`h-14 ${colorClass} rounded-md flex items-center justify-center relative overflow-hidden ${item.stock > 0 ? 'group-hover:opacity-90 transition-opacity' : ''} shrink-0`}>
                             <span className="text-lg font-bold text-white/90 drop-shadow-sm">{getInitials(item.name)}</span>
                             <div className="absolute bottom-1 right-1 bg-black/40 text-white text-[8px] px-1 py-0.5 rounded font-mono">
                               {item.sku || '-'}
                             </div>
+                            {item.stock <= 0 && (
+                              <div className="absolute inset-0 bg-red-900/40 backdrop-blur-[1px] flex items-center justify-center">
+                                <span className="text-[10px] bg-red-500 text-white font-bold px-2 py-0.5 rounded shadow-sm rotate-[-10deg]">STOK HABIS</span>
+                              </div>
+                            )}
                           </div>
                           <div className="pt-1.5 flex flex-col flex-1">
                             <div className="font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight text-[11px] flex-1">
                               {item.name}
                             </div>
                             <div className="flex items-center justify-between mt-1 text-[10px]">
-                              <span className="text-slate-500 dark:text-slate-400">Stok:</span>
-                              <span className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold px-1.5 py-0.2 rounded font-mono">
+                              <span className={item.stock > 0 ? "text-slate-500 dark:text-slate-400" : "text-red-500 dark:text-red-400 font-medium"}>
+                                Stok:
+                              </span>
+                              <span className={item.stock > 0 ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold px-1.5 py-0.2 rounded font-mono" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-bold px-1.5 py-0.2 rounded font-mono"}>
                                 {item.stock}
                               </span>
                             </div>
@@ -596,22 +611,29 @@ export const PosView: React.FC = () => {
                       return (
                         <div 
                           key={item.id} 
-                          onClick={() => addToCart(item)}
-                          className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2 flex items-center gap-2 cursor-pointer hover:shadow-sm hover:border-indigo-400 dark:hover:border-indigo-500 transition-all group"
+                          onClick={() => { if (item.stock > 0) addToCart(item); }}
+                          className={`bg-white dark:bg-slate-950 border rounded-lg p-2 flex items-center gap-2 relative overflow-hidden ${item.stock > 0 ? 'border-slate-200 dark:border-slate-800 cursor-pointer hover:shadow-sm hover:border-indigo-400 dark:hover:border-indigo-500 transition-all group' : 'border-red-200 dark:border-red-900/50 cursor-not-allowed opacity-75 grayscale-[30%]'}`}
                         >
                           <div className={`w-10 h-10 rounded-md ${colorClass} flex items-center justify-center shrink-0 relative overflow-hidden`}>
                             <span className="text-xs font-bold text-white">{getInitials(item.name)}</span>
                           </div>
+                          
                           <div className="flex-1 min-w-0">
                             <h4 className="font-bold text-slate-800 dark:text-slate-200 text-[11px] truncate leading-tight">{item.name}</h4>
                             <p className="text-[9px] text-slate-400 font-mono mt-0.5">{item.sku || '-'}</p>
                           </div>
-                          <div className="text-right shrink-0">
+                          <div className="text-right shrink-0 relative z-10">
                             <div className="text-[9px] text-slate-400">Stok</div>
-                            <div className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-[10px] font-bold px-1.5 py-0.5 rounded font-mono mt-0.5">
+                            <div className={item.stock > 0 ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-[10px] font-bold px-1.5 py-0.5 rounded font-mono mt-0.5" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[10px] font-bold px-1.5 py-0.5 rounded font-mono mt-0.5"}>
                               {item.stock}
                             </div>
                           </div>
+                          
+                          {item.stock <= 0 && (
+                            <div className="absolute inset-0 bg-red-900/10 dark:bg-red-900/20 flex items-center justify-center pointer-events-none">
+                               <span className="text-[10px] bg-red-500 text-white font-bold px-2 py-0.5 rounded shadow-sm">STOK HABIS</span>
+                            </div>
+                          )}
                         </div>
                       )
                     })}

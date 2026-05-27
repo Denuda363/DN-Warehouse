@@ -114,6 +114,15 @@ export type WarehouseProfile = {
   logo?: string;
 };
 
+export type ActivityLog = {
+  id: string;
+  userId: string;
+  username: string;
+  action: string;
+  details: string;
+  timestamp: string;
+};
+
 export type AppData = {
   users: User[];
   categories: Category[];
@@ -123,6 +132,7 @@ export type AppData = {
   items: Item[];
   transactions: Transaction[];
   purchaseInvoices: PurchaseInvoice[];
+  activityLogs: ActivityLog[];
   theme: 'light' | 'dark';
   colorTheme: 'indigo' | 'emerald' | 'blue' | 'orange' | 'rose';
   navBgColor?: string;

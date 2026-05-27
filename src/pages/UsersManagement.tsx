@@ -12,7 +12,7 @@ import { User, Role } from "../types";
 import { Edit, Trash2, Plus, Save, X } from "lucide-react";
 
 export const UsersManagement: React.FC = () => {
-  const { data, updateData, currentUser } = useAppContext();
+  const { data, updateData, currentUser, logActivity } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<User>>({});
 
@@ -33,6 +33,7 @@ export const UsersManagement: React.FC = () => {
     { id: "SETTING_TAB_BACKUP", label: "Tab: Backup & Restore" },
     { id: "SETTING_TAB_PROFILE", label: "Tab: Profil Gudang" },
     { id: "SETTING_TAB_USERS", label: "Tab: Manajemen Pengguna" },
+    { id: "SETTING_TAB_LOGS", label: "Tab: Log Aktivitas" },
   ];
 
   const handleEdit = (user: User) => {
@@ -60,8 +61,10 @@ export const UsersManagement: React.FC = () => {
       newUsers = data.users.map((u) =>
         u.id === formData.id ? ({ ...u, ...formData } as User) : u,
       );
+      logActivity("Edit Pengguna", `Memperbarui hak akses/data pengguna: ${formData.username}`);
     } else {
       newUsers = [...data.users, formData as User];
+      logActivity("Tambah Pengguna", `Menambahkan pengguna baru: ${formData.username}`);
     }
 
     updateData({ users: newUsers });
@@ -74,6 +77,8 @@ export const UsersManagement: React.FC = () => {
       return;
     }
     if (confirm("Hapus pengguna ini?")) {
+      const userToDelete = data.users.find(u => u.id === id);
+      logActivity("Hapus Pengguna", `Menghapus pengguna: ${userToDelete?.username}`);
       updateData({ users: data.users.filter((u) => u.id !== id) });
     }
   };

@@ -11,11 +11,12 @@ import { Input } from "../components/ui/Input";
 import { Download, Upload, Moon, Sun, Palette } from "lucide-react";
 import { UsersManagement } from "./UsersManagement";
 import { JarvisTransition } from "../components/JarvisTransition";
+import { ActivityLogList } from "./ActivityLogList";
 
 export const Settings: React.FC = () => {
-  const { data, updateData, resetData, currentUser } = useAppContext();
+  const { data, updateData, resetData, currentUser, logActivity } = useAppContext();
   const [activeTab, setActiveTab] = useState<
-    "theme" | "backup" | "profile" | "users"
+    "theme" | "backup" | "profile" | "users" | "logs"
   >("theme");
 
   const handleBackup = () => {
@@ -29,6 +30,7 @@ export const Settings: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    logActivity("Backup Data", "Mengunduh file backup aplikasi");
   };
 
   const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,6 +44,7 @@ export const Settings: React.FC = () => {
         if (parsed && parsed.items && parsed.users) {
           if (confirm("Restore akan menimpa semua data saat ini. Lanjutkan?")) {
             resetData(parsed);
+            logActivity("Restore Data", "Memulihkan data aplikasi dari file backup");
             alert("Restore berhasil!");
           }
         } else {
@@ -67,6 +70,7 @@ export const Settings: React.FC = () => {
     { id: "backup", label: "Backup & Restore", perm: "SETTING_TAB_BACKUP" },
     { id: "profile", label: "Profil Gudang", perm: "SETTING_TAB_PROFILE" },
     { id: "users", label: "Manajemen Pengguna", perm: "SETTING_TAB_USERS" },
+    { id: "logs", label: "Log Aktivitas", perm: "SETTING_TAB_LOGS" },
   ];
 
   const tabs = allTabs.filter((t) => {
@@ -409,6 +413,7 @@ export const Settings: React.FC = () => {
         )}
 
           {activeTab === "users" && <UsersManagement />}
+          {activeTab === "logs" && <ActivityLogList />}
         </JarvisTransition>
       </div>
     </div>

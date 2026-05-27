@@ -6,7 +6,7 @@ import { Input } from '../components/ui/Input';
 import { PackagePlus, PackageMinus, CheckCircle2 } from 'lucide-react';
 
 export const TransactionForm: React.FC<{ type: 'IN' | 'OUT' }> = ({ type }) => {
-  const { data, updateData, currentUser } = useAppContext();
+  const { data, updateData, currentUser, logActivity } = useAppContext();
   
   const [itemId, setItemId] = useState('');
   const [qty, setQty] = useState('');
@@ -17,8 +17,8 @@ export const TransactionForm: React.FC<{ type: 'IN' | 'OUT' }> = ({ type }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!itemId || !qty || Number(qty) <= 0) return;
+    const item = data.items.find(i => i.id === itemId);
     if (type === 'OUT') {
-      const item = data.items.find(i => i.id === itemId);
       if (item && item.stock < Number(qty)) {
         alert("Stok tidak mencukupi!");
         return;
@@ -36,15 +36,20 @@ export const TransactionForm: React.FC<{ type: 'IN' | 'OUT' }> = ({ type }) => {
       userId: currentUser?.id || 'unknown',
     };
 
-    const newItems = data.items.map(item => {
-      if (item.id === itemId) {
+    const newItems = data.items.map(i => {
+      if (i.id === itemId) {
         return {
-          ...item,
-          stock: type === 'IN' ? item.stock + Number(qty) : item.stock - Number(qty)
+          ...i,
+          stock: type === 'IN' ? i.stock + Number(qty) : i.stock - Number(qty)
         };
       }
-      return item;
+      return i;
     });
+
+    logActivity(
+      type === 'IN' ? "Barang Masuk" : "Barang Keluar",
+      `${type === 'IN' ? "Menambah" : "Mengurangi"} stok ${item?.name || itemId} sebanyak ${qty}`
+    );
 
     updateData({
       transactions: [newTx, ...data.transactions],

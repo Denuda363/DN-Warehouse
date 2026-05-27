@@ -8,7 +8,7 @@ import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../firebase";
 
 export const Login: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
-  const { data, setCurrentUser, updateData } = useAppContext();
+  const { data, setCurrentUser, updateData, logActivity } = useAppContext();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,6 +22,7 @@ export const Login: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     );
     if (user) {
       setCurrentUser(user);
+      logActivity("Login", `User ${user.username} logged in via username`, user);
       onSuccess();
     } else {
       setError("Username atau password salah");
@@ -62,6 +63,7 @@ export const Login: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
       }
 
       setCurrentUser(existingUser as any);
+      logActivity("Login", `User ${existingUser!.username} logged in via Google`, existingUser as any);
       onSuccess();
     } catch (err: any) {
       console.error(err);

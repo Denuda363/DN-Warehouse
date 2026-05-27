@@ -63,6 +63,7 @@ const defaultData: AppData = {
   ],
   transactions: [],
   purchaseInvoices: [],
+  activityLogs: [],
   theme: "light",
   colorTheme: "indigo",
 };
@@ -74,6 +75,7 @@ type AppContextType = {
   updateData: (partial: Partial<AppData>) => void;
   resetData: (newData: AppData) => void;
   isLoading: boolean;
+  logActivity: (action: string, details: string, userOverride?: User) => void;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -196,6 +198,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const logActivity = (action: string, details: string, userOverride?: User) => {
+    const user = userOverride || currentUser;
+    if (!user) return;
+    const newLog = {
+      id: "log-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+      userId: user.id,
+      username: user.username,
+      action,
+      details,
+      timestamp: new Date().toISOString(),
+    };
+    
+    const currentLogs = data.activityLogs || [];
+    const newLogs = [newLog, ...currentLogs].slice(0, 1000); // Keep last 1000 logs max
+    
+    const newData = { ...data, activityLogs: newLogs };
+    setData(newData);
+    setDoc(doc(db, "appData", "main"), newData).catch((e) => {
+      console.error("Failed to save activity log", e);
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -205,6 +229,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         updateData,
         resetData,
         isLoading,
+        logActivity,
       }}
     >
       {children}

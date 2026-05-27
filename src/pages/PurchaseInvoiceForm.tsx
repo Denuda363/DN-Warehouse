@@ -64,7 +64,7 @@ export const PurchaseInvoiceForm: React.FC<{
   editInvoiceId?: string;
   onComplete?: () => void;
 }> = ({ editInvoiceId, onComplete }) => {
-  const { data, updateData, currentUser } = useAppContext();
+  const { data, updateData, currentUser, logActivity } = useAppContext();
 
   const currentUserCategories = currentUser?.allowedCategoryIds || [];
   const hasCategoryRestriction =
@@ -441,6 +441,11 @@ export const PurchaseInvoiceForm: React.FC<{
         });
       });
     });
+
+    logActivity(
+      editInvoiceId ? "Edit Pembelian" : "Tambah Pembelian",
+      `Telah memproses ${drafts.length} tagihan. Total Nilai: Rp ${newInvoices.reduce((a, b) => a + b.total, 0).toLocaleString('id-ID')}`
+    );
 
     updateData({
       purchaseInvoices: [...newInvoices, ...currentInvoicesState],
