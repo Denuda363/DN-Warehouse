@@ -662,9 +662,9 @@ export const MasterData: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-x-auto custom-scrollbar">
+        <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="w-full text-sm text-left min-w-[800px]">
-            <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 sticky top-0 border-b dark:border-slate-800">
+            <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10 border-b dark:border-slate-800">
               {activeTab === "items" && (
                 <tr>
                   <th className="px-6 py-4 font-medium">SKU</th>

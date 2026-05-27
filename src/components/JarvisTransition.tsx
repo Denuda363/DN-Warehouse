@@ -72,7 +72,7 @@ export const JarvisTransition: React.FC<JarvisTransitionProps> = ({
   // Tab Transition Layout
   if (mode === "tab") {
     return (
-      <div className="relative w-full overflow-hidden rounded-xl border border-slate-205 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/30 backdrop-blur-md shadow-sm">
+      <div className="relative w-full flex-1 flex flex-col overflow-hidden rounded-xl border border-slate-205 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/30 backdrop-blur-md shadow-sm">
         <AnimatePresence>
           {!isDone && (
             <motion.div
@@ -109,7 +109,7 @@ export const JarvisTransition: React.FC<JarvisTransitionProps> = ({
         </AnimatePresence>
 
         {/* Content with high-end sci-fi transition effects */}
-        <div className={`w-full transition-all duration-300 ${!isDone ? "blur-[1px] scale-[0.99] opacity-30 select-none pointer-events-none" : "blur-0 scale-100 opacity-100"}`}>
+        <div className={`w-full flex-1 flex flex-col overflow-hidden transition-all duration-300 ${!isDone ? "blur-[1px] scale-[0.99] opacity-30 select-none pointer-events-none" : "blur-0 scale-100 opacity-100"}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={activeKey}
@@ -117,6 +117,7 @@ export const JarvisTransition: React.FC<JarvisTransitionProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0, filter: "brightness(1)" }}
               exit={{ opacity: 0, scale: 0.985, y: -4, filter: "brightness(0.85)" }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="flex-1 flex flex-col overflow-hidden h-full w-full"
             >
               {children}
             </motion.div>
