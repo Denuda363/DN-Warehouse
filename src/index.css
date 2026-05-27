@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -60,4 +60,74 @@
   --color-indigo-800: var(--color-rose-800);
   --color-indigo-900: var(--color-rose-900);
   --color-indigo-950: var(--color-rose-950);
+}
+
+.theme-purple {
+  --color-indigo-50: var(--color-purple-50);
+  --color-indigo-100: var(--color-purple-100);
+  --color-indigo-200: var(--color-purple-200);
+  --color-indigo-300: var(--color-purple-300);
+  --color-indigo-400: var(--color-purple-400);
+  --color-indigo-500: var(--color-purple-500);
+  --color-indigo-600: var(--color-purple-600);
+  --color-indigo-700: var(--color-purple-700);
+  --color-indigo-800: var(--color-purple-800);
+  --color-indigo-900: var(--color-purple-900);
+  --color-indigo-950: var(--color-purple-950);
+}
+
+.theme-slate {
+  --color-indigo-50: var(--color-slate-50);
+  --color-indigo-100: var(--color-slate-100);
+  --color-indigo-200: var(--color-slate-200);
+  --color-indigo-300: var(--color-slate-300);
+  --color-indigo-400: var(--color-slate-400);
+  --color-indigo-500: var(--color-slate-500);
+  --color-indigo-600: var(--color-slate-600);
+  --color-indigo-700: var(--color-slate-700);
+  --color-indigo-800: var(--color-slate-800);
+  --color-indigo-900: var(--color-slate-900);
+  --color-indigo-950: var(--color-slate-950);
+}
+
+.theme-cyan {
+  --color-indigo-50: var(--color-cyan-50);
+  --color-indigo-100: var(--color-cyan-100);
+  --color-indigo-200: var(--color-cyan-200);
+  --color-indigo-300: var(--color-cyan-300);
+  --color-indigo-400: var(--color-cyan-400);
+  --color-indigo-500: var(--color-cyan-500);
+  --color-indigo-600: var(--color-cyan-600);
+  --color-indigo-700: var(--color-cyan-700);
+  --color-indigo-800: var(--color-cyan-800);
+  --color-indigo-900: var(--color-cyan-900);
+  --color-indigo-950: var(--color-cyan-950);
+}
+
+.theme-red {
+  --color-indigo-50: var(--color-red-50);
+  --color-indigo-100: var(--color-red-100);
+  --color-indigo-200: var(--color-red-200);
+  --color-indigo-300: var(--color-red-300);
+  --color-indigo-400: var(--color-red-400);
+  --color-indigo-500: var(--color-red-500);
+  --color-indigo-600: var(--color-red-600);
+  --color-indigo-700: var(--color-red-700);
+  --color-indigo-800: var(--color-red-800);
+  --color-indigo-900: var(--color-red-900);
+  --color-indigo-950: var(--color-red-950);
+}
+
+.theme-amber {
+  --color-indigo-50: var(--color-amber-50);
+  --color-indigo-100: var(--color-amber-100);
+  --color-indigo-200: var(--color-amber-200);
+  --color-indigo-300: var(--color-amber-300);
+  --color-indigo-400: var(--color-amber-400);
+  --color-indigo-500: var(--color-amber-500);
+  --color-indigo-600: var(--color-amber-600);
+  --color-indigo-700: var(--color-amber-700);
+  --color-indigo-800: var(--color-amber-800);
+  --color-indigo-900: var(--color-amber-900);
+  --color-indigo-950: var(--color-amber-950);
 }

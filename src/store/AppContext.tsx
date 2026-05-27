@@ -11,7 +11,13 @@ import type {
   PurchaseInvoice,
 } from "../types";
 import { db, auth, handleFirestoreError, OperationType } from "../firebase";
-import { doc, getDoc, setDoc, onSnapshot, getDocFromServer } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot,
+  getDocFromServer,
+} from "firebase/firestore";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 
 const defaultData: AppData = {
@@ -66,6 +72,7 @@ const defaultData: AppData = {
   activityLogs: [],
   theme: "light",
   colorTheme: "indigo",
+  navStyle: "sidebar",
 };
 
 type AppContextType = {
@@ -91,9 +98,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     async function testConnection() {
       try {
-        await getDocFromServer(doc(db, 'appData', 'connection_test'));
+        await getDocFromServer(doc(db, "appData", "connection_test"));
       } catch (error) {
-        if(error instanceof Error && error.message.includes('the client is offline')) {
+        if (
+          error instanceof Error &&
+          error.message.includes("the client is offline")
+        ) {
           console.error("Please check your Firebase configuration.");
         }
       }
@@ -116,7 +126,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           const fetched = { ...defaultData, ...snap.data() } as AppData;
           setData(fetched);
 
-          const savedUserStr = sessionStorage.getItem("gudang_user") || localStorage.getItem("gudang_user");
+          const savedUserStr =
+            sessionStorage.getItem("gudang_user") ||
+            localStorage.getItem("gudang_user");
           if (savedUserStr) {
             try {
               const parsed = JSON.parse(savedUserStr);
@@ -124,14 +136,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
                 // Security verification: ensure it matches logged in Google user email
                 if (parsed.username === firebaseUser.email) {
                   setCurrentUser(parsed);
-                } else if (fetched.users.find((u) => u.username === firebaseUser.email)) {
-                  setCurrentUser(fetched.users.find((u) => u.username === firebaseUser.email) as User);
+                } else if (
+                  fetched.users.find((u) => u.username === firebaseUser.email)
+                ) {
+                  setCurrentUser(
+                    fetched.users.find(
+                      (u) => u.username === firebaseUser.email,
+                    ) as User,
+                  );
                 } else {
                   setCurrentUser(null);
                 }
               } else {
                 // Local session: verify it exists in fetched.users
-                const activeLocalUser = fetched.users.find((u) => u.username === parsed.username);
+                const activeLocalUser = fetched.users.find(
+                  (u) => u.username === parsed.username,
+                );
                 if (activeLocalUser) {
                   setCurrentUser(activeLocalUser);
                 } else {
@@ -142,8 +162,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               setCurrentUser(null);
             }
           } else {
-            if (firebaseUser && fetched.users.find((u) => u.username === firebaseUser.email)) {
-              setCurrentUser(fetched.users.find((u) => u.username === firebaseUser.email) as User);
+            if (
+              firebaseUser &&
+              fetched.users.find((u) => u.username === firebaseUser.email)
+            ) {
+              setCurrentUser(
+                fetched.users.find(
+                  (u) => u.username === firebaseUser.email,
+                ) as User,
+              );
             } else {
               setCurrentUser(null);
             }
@@ -167,7 +194,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         handleFirestoreError(error, OperationType.GET, "appData/main");
       },
     );
-    
+
     return () => unsub();
   }, [firebaseUser]);
 
@@ -205,21 +232,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const logActivity = (action: string, details: string, userOverride?: User) => {
+  const logActivity = (
+    action: string,
+    details: string,
+    userOverride?: User,
+  ) => {
     const user = userOverride || currentUser;
     if (!user) return;
     const newLog = {
-      id: "log-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+      id:
+        "log-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
       userId: user.id,
       username: user.username,
       action,
       details,
       timestamp: new Date().toISOString(),
     };
-    
+
     const currentLogs = data.activityLogs || [];
     const newLogs = [newLog, ...currentLogs].slice(0, 1000); // Keep last 1000 logs max
-    
+
     const newData = { ...data, activityLogs: newLogs };
     setData(newData);
     setDoc(doc(db, "appData", "main"), newData).catch((e) => {

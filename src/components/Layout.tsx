@@ -117,7 +117,7 @@ export const Layout: React.FC<{
 
   return (
     <div
-      className={`min-h-screen flex h-screen overflow-hidden ${data.theme === "dark" ? "dark bg-slate-950 text-white" : "bg-slate-100 text-slate-900"}`}
+      className={`min-h-screen flex h-screen overflow-hidden ${data.theme === "dark" ? "dark bg-slate-950 text-white" : "bg-slate-100 text-slate-900"} ${data.navStyle === "topbar" ? "flex-col" : "flex-row"}`}
     >
       {/* Sidebar - Mobile Overlay */}
       {sidebarOpen && (
@@ -129,7 +129,7 @@ export const Layout: React.FC<{
 
       {/* Sidebar */}
       <aside
-        className={`fixed md:relative inset-y-0 left-0 z-50 h-full ${sidebarOpen ? "w-72 translate-x-0" : "w-20 -translate-x-full md:translate-x-0"} transition-all duration-300 flex flex-col font-sans shrink-0 border-r shadow-2xl md:shadow-none`}
+        className={`fixed ${data.navStyle === "topbar" ? "md:hidden" : "md:relative"} inset-y-0 left-0 z-50 h-full ${sidebarOpen ? "w-72 translate-x-0" : "w-20 -translate-x-full md:translate-x-0"} transition-all duration-300 flex flex-col font-sans shrink-0 border-r shadow-2xl md:shadow-none`}
         style={
           data.navIsTransparent
             ? {
@@ -284,10 +284,10 @@ export const Layout: React.FC<{
             onClick={async () => {
               logActivity("Logout", `User ${currentUser?.username} logged out`);
               try {
-                 const { auth } = await import("../firebase");
-                 const { signOut } = await import("firebase/auth");
-                 await signOut(auth);
-              } catch(e){}
+                const { auth } = await import("../firebase");
+                const { signOut } = await import("firebase/auth");
+                await signOut(auth);
+              } catch (e) {}
               setCurrentUser(null);
             }}
             className={`relative group flex items-center px-4 py-3 min-h-[44px] transition-all rounded-lg hover:bg-slate-500/5`}
@@ -337,15 +337,80 @@ export const Layout: React.FC<{
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Header */}
-        <header className="h-16 bg-white dark:bg-slate-900/50 backdrop-blur border-b dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 shrink-0">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+        <header className="h-16 bg-white dark:bg-slate-900/50 backdrop-blur border-b dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 shrink-0 relative z-30">
+          <div className="flex items-center">
+            {data.navStyle !== "topbar" ? (
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            ) : (
+              <div className="flex items-center gap-4">
+                <div
+                  className="flex flex-row items-center cursor-pointer"
+                  onClick={() => navigate("dashboard")}
+                >
+                  {data.warehouseProfile?.logo ? (
+                    <img
+                      src={data.warehouseProfile.logo}
+                      alt="Logo"
+                      className={`w-8 h-8 rounded shrink-0 object-contain shadow-sm bg-indigo-500/10 p-1`}
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
+                      <div className="w-3 h-3 bg-white rounded-sm opacity-80"></div>
+                    </div>
+                  )}
+                  <span className="ml-3 font-bold text-sm tracking-widest uppercase hidden md:block">
+                    {data.warehouseProfile?.name || "ROUNDS"}
+                  </span>
+                </div>
 
-          <div className="flex items-center gap-6">
+                <div className="hidden md:flex items-center gap-1 ml-4 border-l dark:border-slate-800 pl-4">
+                  {menus.map((m) => {
+                    const Icon = m.icon;
+                    const active = currentPath === m.path;
+                    if (
+                      currentUser?.role !== "ADMIN" &&
+                      m.perm &&
+                      !(currentUser?.permissions || []).includes(m.perm)
+                    )
+                      return null;
+
+                    return (
+                      <button
+                        key={m.path}
+                        onClick={() => navigate(m.path)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                          active
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600"
+                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                        title={m.name}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span className="hidden lg:inline">{m.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-6">
+            {data.navStyle === "topbar" && (
+              <div className="md:hidden">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <Menu className="w-5 h-5" />
+                </button>
+              </div>
+            )}
             <div>
               <button
                 className={`p-2.5 relative rounded-xl transition-all duration-200 active:scale-95 ${
@@ -356,7 +421,10 @@ export const Layout: React.FC<{
                 onClick={() => setShowNotifications(true)}
                 title="Buka Panel Notifikasi"
               >
-                <Bell className={`w-5 h-5 ${totalNotifs > 0 ? "animate-bounce" : ""}`} style={{ animationDuration: "2.5s" }} />
+                <Bell
+                  className={`w-5 h-5 ${totalNotifs > 0 ? "animate-bounce" : ""}`}
+                  style={{ animationDuration: "2.5s" }}
+                />
                 {totalNotifs > 0 && (
                   <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-[10px] font-extrabold text-white shadow-lg ring-2 ring-white dark:ring-slate-900 animate-pulse">
                     {totalNotifs > 99 ? "99+" : totalNotifs}
@@ -364,6 +432,31 @@ export const Layout: React.FC<{
                 )}
               </button>
             </div>
+            {data.navStyle === "topbar" && (
+              <div className="hidden md:flex items-center gap-2 pl-4 border-l border-slate-200 dark:border-slate-800">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-sm font-bold text-indigo-700 dark:text-indigo-300">
+                  {currentUser?.username?.charAt(0).toUpperCase() || "U"}
+                </div>
+                <button
+                  onClick={async () => {
+                    logActivity(
+                      "Logout",
+                      `User ${currentUser?.username} logged out`,
+                    );
+                    try {
+                      const { auth } = await import("../firebase");
+                      const { signOut } = await import("firebase/auth");
+                      await signOut(auth);
+                    } catch (e) {}
+                    setCurrentUser(null);
+                  }}
+                  className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors rounded-lg"
+                  title="Logout"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
@@ -389,7 +482,7 @@ export const Layout: React.FC<{
               onClick={() => setShowNotifications(false)}
               className="fixed inset-0 bg-slate-950/60 backdrop-blur-[2px] z-50 transition-opacity"
             />
-            
+
             {/* Drawer */}
             <motion.div
               initial={{ x: "100%", opacity: 0.95 }}
@@ -405,8 +498,12 @@ export const Layout: React.FC<{
                     <Bell className="w-5 h-5 text-white animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-base leading-none">Pusat Notifikasi</h3>
-                    <p className="text-[10px] text-rose-100 dark:text-rose-400 mt-1">{totalNotifs} Peringatan Aktif</p>
+                    <h3 className="font-bold text-base leading-none">
+                      Pusat Notifikasi
+                    </h3>
+                    <p className="text-[10px] text-rose-100 dark:text-rose-400 mt-1">
+                      {totalNotifs} Peringatan Aktif
+                    </p>
                   </div>
                 </div>
                 <button
@@ -420,15 +517,21 @@ export const Layout: React.FC<{
               {/* Filtering / Summary Grid */}
               <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-slate-800 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 py-3 shrink-0">
                 <div>
-                  <div className="font-bold text-rose-600 dark:text-rose-400 text-sm">{lowStockItems.length}</div>
+                  <div className="font-bold text-rose-600 dark:text-rose-400 text-sm">
+                    {lowStockItems.length}
+                  </div>
                   <div>Stok Menipis</div>
                 </div>
                 <div>
-                  <div className="font-bold text-orange-500 dark:text-orange-400 text-sm">{expiringItems.length}</div>
+                  <div className="font-bold text-orange-500 dark:text-orange-400 text-sm">
+                    {expiringItems.length}
+                  </div>
                   <div>Hampir Expired</div>
                 </div>
                 <div>
-                  <div className="font-bold text-indigo-600 dark:text-indigo-400 text-sm">{recentTxs.length}</div>
+                  <div className="font-bold text-indigo-600 dark:text-indigo-400 text-sm">
+                    {recentTxs.length}
+                  </div>
                   <div>Arus Baru</div>
                 </div>
               </div>
@@ -449,7 +552,10 @@ export const Layout: React.FC<{
                           className="p-3 bg-red-500/5 dark:bg-rose-950/25 rounded-xl border border-red-200/50 dark:border-rose-900/40 text-xs flex gap-3 shadow-xs hover:border-red-300 dark:hover:border-rose-800 transition-colors"
                         >
                           <div className="p-2 bg-red-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 rounded-lg self-start">
-                            <AlertTriangle className="w-4 h-4 animate-bounce" style={{ animationDuration: '3s' }} />
+                            <AlertTriangle
+                              className="w-4 h-4 animate-bounce"
+                              style={{ animationDuration: "3s" }}
+                            />
                           </div>
                           <div className="flex-1 min-w-0">
                             <span className="font-bold text-slate-800 dark:text-stone-200 block truncate">
@@ -489,7 +595,9 @@ export const Layout: React.FC<{
                               {item.name}
                             </span>
                             <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-[10px]">
-                              {item.batchNumber ? `Batch: ${item.batchNumber}` : "Batch Utama"}
+                              {item.batchNumber
+                                ? `Batch: ${item.batchNumber}`
+                                : "Batch Utama"}
                             </p>
                             <span className="text-orange-600 dark:text-orange-400 block mt-1 font-bold">
                               Exp: {item.expiryDate}
@@ -528,11 +636,17 @@ export const Layout: React.FC<{
                                   : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
                               }`}
                             >
-                              {isOut ? <PackageMinus className="w-4 h-4" /> : <PackagePlus className="w-4 h-4" />}
+                              {isOut ? (
+                                <PackageMinus className="w-4 h-4" />
+                              ) : (
+                                <PackagePlus className="w-4 h-4" />
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <span className="font-bold text-slate-700 dark:text-stone-300 block truncate">
-                                {isOut ? "Barang Keluar (POS)" : "Barang Masuk (Inbound)"}
+                                {isOut
+                                  ? "Barang Keluar (POS)"
+                                  : "Barang Masuk (Inbound)"}
                               </span>
                               <span className="text-slate-600 dark:text-slate-400 block text-[11px] mt-0.5 font-medium">
                                 {isOut ? "-" : "+"} {tx.qty} {item?.name}
@@ -554,8 +668,12 @@ export const Layout: React.FC<{
                 {totalNotifs === 0 && (
                   <div className="py-16 text-center text-slate-400 dark:text-slate-500 text-sm flex flex-col items-center justify-center">
                     <Bell className="w-12 h-12 mb-3 text-slate-300 dark:text-slate-700 animate-bounce" />
-                    <p className="font-semibold text-slate-700 dark:text-slate-300">Aman Terkendali!</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Sistem prima, semua stok aman.</p>
+                    <p className="font-semibold text-slate-700 dark:text-slate-300">
+                      Aman Terkendali!
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                      Sistem prima, semua stok aman.
+                    </p>
                   </div>
                 )}
               </div>

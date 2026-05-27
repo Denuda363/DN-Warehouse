@@ -35,6 +35,11 @@ function AppContent() {
       "theme-blue",
       "theme-orange",
       "theme-rose",
+      "theme-purple",
+      "theme-slate",
+      "theme-cyan",
+      "theme-red",
+      "theme-amber",
     );
     // Add current color theme
     if (data.colorTheme) {

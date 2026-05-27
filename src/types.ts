@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'STAFF' | 'MANAGER';
+export type Role = "ADMIN" | "STAFF" | "MANAGER";
 
 export type User = {
   id: string;
@@ -50,7 +50,7 @@ export type Item = {
   alternateUnits?: { unitId: string; conversionRate: number }[];
 };
 
-export type TransactionType = 'IN' | 'OUT';
+export type TransactionType = "IN" | "OUT";
 
 export type Transaction = {
   id: string;
@@ -70,7 +70,7 @@ export type Transaction = {
   returnNote?: string;
 };
 
-export type PurchaseInvoiceStatus = 'COMPLETED' | 'CANCELED' | 'RETURNED';
+export type PurchaseInvoiceStatus = "COMPLETED" | "CANCELED" | "RETURNED";
 
 export type PurchaseInvoiceItem = {
   id: string;
@@ -81,7 +81,7 @@ export type PurchaseInvoiceItem = {
   conversionRate?: number;
   returnedQty: number; // in base units
   price: number;
-  discountType: 'Rp' | '%';
+  discountType: "Rp" | "%";
   discountValue: number;
   batchNo: string;
   expDate: string;
@@ -96,7 +96,7 @@ export type PurchaseInvoice = {
   invoiceDate: string;
   paymentMethod: string;
   dueDays: number;
-  invoiceDiscType: 'Rp' | '%';
+  invoiceDiscType: "Rp" | "%";
   invoiceDiscValue: number;
   useTax: boolean;
   taxPercent: number;
@@ -133,8 +133,19 @@ export type AppData = {
   transactions: Transaction[];
   purchaseInvoices: PurchaseInvoice[];
   activityLogs: ActivityLog[];
-  theme: 'light' | 'dark';
-  colorTheme: 'indigo' | 'emerald' | 'blue' | 'orange' | 'rose';
+  theme: "light" | "dark";
+  colorTheme:
+    | "indigo"
+    | "emerald"
+    | "blue"
+    | "orange"
+    | "rose"
+    | "purple"
+    | "slate"
+    | "cyan"
+    | "red"
+    | "amber";
+  navStyle?: "sidebar" | "topbar";
   navBgColor?: string;
   navTextColor?: string;
   navIsTransparent?: boolean;

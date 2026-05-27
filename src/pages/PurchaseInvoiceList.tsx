@@ -240,8 +240,128 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
           </Button>
         </div>
         
-        <div className="flex-1 overflow-x-auto bg-white dark:bg-slate-900 custom-scrollbar">
-          <table className="w-full text-sm text-left min-w-[800px]">
+        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 custom-scrollbar relative px-0 sm:px-0">
+          {/* Mobile View - Cards */}
+          <div className="md:hidden flex flex-col gap-3 p-4">
+            {filteredInvoices.map(inv => {
+              const supplier = data.suppliers.find(s => s.id === inv.supplierId);
+              const date = new Date(inv.invoiceDate);
+              const isCanceled = inv.status === 'CANCELED';
+              const isExpanded = expandedInvoiceId === inv.id;
+              const returnTotal = calculateReturnTotal(inv);
+              const hasReturn = returnTotal > 0;
+              const finalEffectiveTotal = inv.total - returnTotal;
+              
+              return (
+                <Card key={inv.id} className="overflow-hidden bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div 
+                    className="p-4 flex flex-col gap-3 cursor-pointer"
+                    onClick={() => setExpandedInvoiceId(isExpanded ? null : inv.id)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-indigo-500" />
+                        <span className="font-bold text-slate-800 dark:text-slate-100">{inv.invoiceNo}</span>
+                      </div>
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider ${
+                        inv.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30' :
+                        inv.status === 'CANCELED' ? 'bg-red-100 text-red-700 dark:bg-red-900/30' :
+                        'bg-orange-100 text-orange-700 dark:bg-orange-900/30'
+                      }`}>
+                        {inv.status}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <div className="text-[10px] text-slate-400 uppercase tracking-widest">Tanggal</div>
+                        <div className="font-medium">{date.toLocaleDateString('id-ID')}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-slate-400 uppercase tracking-widest">Supplier</div>
+                        <div className="font-medium text-slate-700 dark:text-slate-300 truncate">{supplier?.name || 'Unknown'}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-800/60 pt-3">
+                      <div>
+                        <div className="text-[10px] text-slate-400 uppercase tracking-widest">Total</div>
+                        <div className="font-mono font-bold text-emerald-600 dark:text-emerald-400">Rp {new Intl.NumberFormat('id-ID').format(finalEffectiveTotal)}</div>
+                        {hasReturn && (
+                          <div className="font-mono text-[10px] line-through text-slate-400">Rp {new Intl.NumberFormat('id-ID').format(inv.total)}</div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {!isCanceled && (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onEdit(inv.id); }} title="Edit" className="text-slate-500 hover:text-indigo-600 h-8 w-8">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleCancel(inv); }} title="Batal" className="text-slate-500 hover:text-orange-600 h-8 w-8">
+                              <Ban className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(inv.id); }} title="Hapus" className="text-slate-500 hover:text-red-600 h-8 w-8">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                        <button className="ml-1 text-slate-400 hover:text-slate-600">
+                          {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {isExpanded && (
+                    <div className="bg-slate-50/50 dark:bg-slate-900/30 p-4 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-3">
+                      <div className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center">
+                        <FileText className="w-3.5 h-3.5 mr-1.5 text-slate-400" /> Item Detail
+                      </div>
+                      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {inv.items.filter(item => {
+                            if (hasCategoryRestriction) {
+                              const product = data.items.find(i => i.id === item.itemId);
+                              return product && currentUserCategories.includes(product.categoryId);
+                            }
+                            return true;
+                          }).map(item => {
+                          const product = data.items.find(i => i.id === item.itemId);
+                          return (
+                            <div key={item.id} className="py-2.5 flex flex-col gap-1.5 text-sm">
+                              <div className="flex justify-between font-medium">
+                                <span>{product?.name || 'Unknown'}</span>
+                                <span className="font-mono text-emerald-600">Rp {new Intl.NumberFormat('id-ID').format(item.subtotal)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs text-slate-500">
+                                <span>Qty: {item.qty} {item.returnedQty > 0 && <span className="text-orange-500 ml-1">(Retur: {item.returnedQty})</span>}</span>
+                                <span>{item.batchNo || '-'} {item.expDate ? `/ ${item.expDate}` : ''}</span>
+                              </div>
+                              {!isCanceled && item.returnedQty < item.qty && (
+                                <div className="flex justify-end mt-1">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => openReturnModal(inv.id, item.itemId, item.qty - item.returnedQty)}
+                                    className="border-orange-200 text-orange-600 hover:bg-orange-50 h-7 text-xs px-3"
+                                  >
+                                    <RotateCcw className="w-3 h-3 mr-1" /> Retur
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm text-left min-w-[800px]">
             <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 sticky top-0 border-b dark:border-slate-800">
               <tr>
                 <th className="px-4 py-3 font-medium">No. Faktur</th>
@@ -452,6 +572,7 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </Card>
 

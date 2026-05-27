@@ -770,7 +770,7 @@ export const PosView: React.FC = () => {
         </div>
 
         {/* Right Pane - Cart */}
-        <div className={`flex-1 w-full lg:max-w-[400px] lg:min-w-[320px] bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex-col shrink-0 lg:shrink ${mobileView === 'cart' && viewMode === 'pos' ? 'flex' : 'hidden lg:flex'}`}>
+        <div className={`flex-1 min-h-0 w-full lg:max-w-[400px] lg:min-w-[320px] bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex-col shrink-0 lg:shrink ${mobileView === 'cart' && viewMode === 'pos' ? 'flex' : 'hidden lg:flex'}`}>
           {/* Cart Items List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {cart.length === 0 ? (

@@ -901,129 +901,116 @@ export const PurchaseInvoiceForm: React.FC<{
                     </div>
                   </div>
 
-                  {/* Table Section */}
-                  <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto mb-8 bg-slate-50/10 dark:bg-slate-950/10">
-                    <table className="w-full text-sm text-left min-w-[600px]">
-                      <thead className="bg-slate-100/70 dark:bg-slate-950/60 text-xs font-bold text-slate-500 dark:text-slate-450 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-                        <tr>
-                          <th className="px-5 py-3.5">NAMA BARANG</th>
-                          <th className="px-5 py-3.5 text-center">QTY</th>
-                          <th className="px-5 py-3.5 text-center">
-                            BATCH / EXPIRY
-                          </th>
-                          <th className="px-5 py-3.5 text-center w-16">AKSI</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/65 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-300">
-                        {activeDraft.items.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={4}
-                              className="px-5 py-12 text-center text-slate-400 bg-slate-50/20 dark:bg-slate-950/5 italic text-xs leading-5"
-                            >
-                              Belum ada item barang ditambahkan pada draft
-                              faktur ini.
-                              <br />
-                              <span className="text-[10px] uppercase font-bold text-slate-450 dark:text-slate-500 not-italic mt-1.5 block">
-                                Gunakan formulir di atas untuk mengisi komoditas
-                                barang.
-                              </span>
-                            </td>
-                          </tr>
-                        ) : (
-                          activeDraft.items.map((item, index) => (
-                            <motion.tr
-                              key={item.id}
-                              initial={{ opacity: 0, y: 4 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.02 }}
-                              className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 border-b border-slate-100 dark:border-slate-800/60"
-                            >
-                              <td className="px-5 py-3.5 font-medium">
+                  {/* Items List */}
+                  <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden mb-8 bg-slate-50/10 dark:bg-slate-950/10">
+                    {/* Header - Desktop Only */}
+                    <div className="hidden md:grid grid-cols-12 gap-4 bg-slate-100/70 dark:bg-slate-950/60 p-4 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-500 dark:text-slate-450 uppercase tracking-wider">
+                      <div className="col-span-4">NAMA BARANG</div>
+                      <div className="col-span-3 text-center">QTY</div>
+                      <div className="col-span-4 text-center">BATCH / EXPIRY</div>
+                      <div className="col-span-1 text-center">AKSI</div>
+                    </div>
+
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800/65 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-300">
+                      {activeDraft.items.length === 0 ? (
+                        <div className="px-5 py-12 text-center text-slate-400 bg-slate-50/20 dark:bg-slate-950/5 italic text-xs leading-5">
+                          Belum ada item barang ditambahkan pada draft
+                          faktur ini.
+                          <br />
+                          <span className="text-[10px] uppercase font-bold text-slate-450 dark:text-slate-500 not-italic mt-1.5 block">
+                            Gunakan formulir di atas untuk mengisi komoditas
+                            barang.
+                          </span>
+                        </div>
+                      ) : (
+                        activeDraft.items.map((item, index) => (
+                          <motion.div
+                            key={item.id}
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.02 }}
+                            className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4"
+                          >
+                            <div className="md:col-span-4 flex justify-between items-start md:block">
+                              <div>
                                 <div className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                                   {item.item.name}
                                 </div>
                                 <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-mono mt-1">
                                   SKU: {item.item.sku}
                                 </div>
-                              </td>
-                              <td className="px-5 py-3.5 text-center">
-                                <div className="inline-flex items-center gap-1.5 justify-center">
-                                  <button
-                                    onClick={() =>
-                                      handleUpdateItemQty(item.id, item.qty - 1)
-                                    }
-                                    className="w-7 h-7 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded font-bold transition flex items-center justify-center select-none text-xs"
-                                    title="Kurangi Qty"
-                                  >
-                                    -
-                                  </button>
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    value={item.qty}
-                                    onChange={(e) =>
-                                      handleUpdateItemQty(
-                                        item.id,
-                                        Number(e.target.value),
-                                      )
-                                    }
-                                    className="w-16 h-7 text-center text-xs font-bold rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
-                                  />
-                                  <button
-                                    onClick={() =>
-                                      handleUpdateItemQty(item.id, item.qty + 1)
-                                    }
-                                    className="w-7 h-7 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded font-bold transition flex items-center justify-center select-none text-xs"
-                                    title="Tambah Qty"
-                                  >
-                                    +
-                                  </button>
-                                  <span className="text-xs text-slate-550 font-semibold ml-2">
-                                    {data.units.find(
-                                      (u) => u.id === item.selectedUnitId,
-                                    )?.name || ""}
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-5 py-3.5 text-center text-slate-500 font-medium">
-                                <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
-                                  {item.batchNo ? (
-                                    <span className="inline-flex items-center bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md text-xs font-mono font-bold text-slate-650 dark:text-slate-300">
-                                      Batch: {item.batchNo}
-                                    </span>
-                                  ) : (
-                                    <span className="text-slate-400 italic text-xs">
-                                      No Batch Empty
-                                    </span>
-                                  )}
-                                  {item.expDate ? (
-                                    <span className="text-xs bg-rose-55 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-950/30 text-rose-600 dark:text-rose-450 px-2.5 py-1 rounded-md font-bold">
-                                      Exp: {item.expDate}
-                                    </span>
-                                  ) : (
-                                    <span className="text-slate-400 italic text-xs">
-                                      No Exp Empty
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-5 py-3.5 text-center">
+                              </div>
+                              <div className="md:hidden">
                                 <button
                                   onClick={() => handleRemoveItem(item.id)}
-                                  className="text-slate-400 hover:text-rose-500 transition-all duration-150 p-1.5 rounded-lg hover:bg-rose-50/50 dark:hover:bg-rose-950/20"
+                                  className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800"
                                 >
-                                  <Trash2
-                                    className="w-4 h-4 mx-auto"
-                                    strokeWidth={2.2}
-                                  />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
-                              </td>
-                            </motion.tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+                              </div>
+                            </div>
+
+                            <div className="md:col-span-3 flex justify-between md:justify-center items-center">
+                              <span className="text-xs font-semibold text-slate-500 md:hidden uppercase">QTY</span>
+                              <div className="inline-flex items-center gap-1.5 justify-center">
+                                <button
+                                  onClick={() => handleUpdateItemQty(item.id, item.qty - 1)}
+                                  className="w-8 h-8 md:w-7 md:h-7 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded font-bold transition flex items-center justify-center select-none text-sm md:text-xs"
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={item.qty}
+                                  onChange={(e) => handleUpdateItemQty(item.id, Number(e.target.value))}
+                                  className="w-16 h-8 md:h-7 text-center text-sm md:text-xs font-bold rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+                                />
+                                <button
+                                  onClick={() => handleUpdateItemQty(item.id, item.qty + 1)}
+                                  className="w-8 h-8 md:w-7 md:h-7 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded font-bold transition flex items-center justify-center select-none text-sm md:text-xs"
+                                >
+                                  +
+                                </button>
+                                <span className="text-xs text-slate-550 font-semibold ml-2 w-12 text-left">
+                                  {data.units.find((u) => u.id === item.selectedUnitId)?.name || ""}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="md:col-span-4 flex flex-row items-center justify-between md:justify-center gap-2">
+                              {item.batchNo ? (
+                                <span className="inline-flex items-center bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md text-xs font-mono font-bold text-slate-650 dark:text-slate-300">
+                                  Batch: {item.batchNo}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic text-xs">
+                                  No Batch Empty
+                                </span>
+                              )}
+                              {item.expDate ? (
+                                <span className="text-xs bg-rose-55 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-950/30 text-rose-600 dark:text-rose-450 px-2.5 py-1 rounded-md font-bold">
+                                  Exp: {item.expDate}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic text-xs">
+                                  No Exp Empty
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="hidden md:flex md:col-span-1 justify-center items-center">
+                              <button
+                                onClick={() => handleRemoveItem(item.id)}
+                                className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50/50 dark:hover:bg-rose-950/20"
+                              >
+                                <Trash2 className="w-4 h-4 mx-auto" />
+                              </button>
+                            </div>
+                          </motion.div>
+                        ))
+                      )}
+                    </div>
                   </div>
 
                   {/* Receipt Guidance Notice Banner */}
