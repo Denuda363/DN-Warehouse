@@ -20,6 +20,7 @@ export const PosView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [posLayout, setPosLayout] = useState<'grid' | 'list'>('grid');
+  const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
 
   const [viewMode, setViewMode] = useState<'pos' | 'history'>('pos');
   const [penyedia, setPenyedia] = useState<string>('');
@@ -457,12 +458,28 @@ export const PosView: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-100px)] flex flex-col gap-4 -mx-4 -mt-4 lg:m-0 p-4 bg-slate-100 dark:bg-slate-900 lg:rounded-xl overflow-hidden shadow-sm">
+    <div className="h-[calc(100vh-100px)] flex flex-col gap-2 lg:gap-4 -mx-4 -mt-4 lg:m-0 p-2 lg:p-4 bg-slate-100 dark:bg-slate-900 lg:rounded-xl overflow-hidden shadow-sm">
+      {viewMode === 'pos' && (
+        <div className="flex lg:hidden bg-white dark:bg-slate-950 p-1 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 shrink-0">
+          <button 
+            className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${mobileView === 'products' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900'}`}
+            onClick={() => setMobileView('products')}
+          >
+            Barang
+          </button>
+          <button 
+            className={`flex-1 py-2 text-sm font-bold rounded-md transition-colors ${mobileView === 'cart' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900'}`}
+            onClick={() => setMobileView('cart')}
+          >
+            Keranjang ({cart.length})
+          </button>
+        </div>
+      )}
       <div className="flex flex-col lg:flex-row gap-4 flex-1 overflow-hidden min-h-0">
         {/* Left Pane - Products */}
-        <div className="flex-[2] flex flex-col gap-4 min-w-0 pb-4 lg:pb-0 overflow-y-auto lg:overflow-hidden">
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0">
-            <div className="relative flex-1">
+        <div className={`flex-[2] flex-col gap-4 min-w-0 pb-4 lg:pb-0 overflow-y-auto lg:overflow-hidden ${mobileView === 'products' || viewMode === 'history' ? 'flex' : 'hidden lg:flex'}`}>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-white dark:bg-slate-950 p-2 rounded-xl border border-slate-200 dark:border-slate-800 shrink-0">
+            <div className="relative flex-1 w-full">
               <UserSquare className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
                 list="staffs-list"
@@ -475,28 +492,30 @@ export const PosView: React.FC = () => {
                 {(data.staffs || []).map(s => <option key={s.id} value={s.name} />)}
               </datalist>
             </div>
-            <div className="relative w-40">
-              <Input 
-                type="date"
-                value={txDate}
-                onChange={e => setTxDate(e.target.value)}
-                className="h-10 bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-800"
-              />
+            <div className="flex gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-40">
+                <Input 
+                  type="date"
+                  value={txDate}
+                  onChange={e => setTxDate(e.target.value)}
+                  className="h-10 w-full bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-800"
+                />
+              </div>
+              {viewMode === 'pos' && (
+                 <Button variant="outline" className="h-10 flex-1 sm:flex-none text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 px-2 sm:px-4" onClick={() => setViewMode('history')}>
+                   <History className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Riwayat List</span>
+                 </Button>
+              )}
             </div>
-            {viewMode === 'pos' && (
-               <Button variant="outline" className="h-10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => setViewMode('history')}>
-                 <History className="w-4 h-4 mr-2" /> Riwayat List
-               </Button>
-            )}
             {viewMode === 'history' && (
-               <>
-                 <Button variant="outline" className="h-10 text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" onClick={exportPosHistoryPdf}>
-                   <FileText className="w-4 h-4 mr-2" /> Export PDF
+               <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                 <Button variant="outline" className="h-10 flex-1 text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950" onClick={exportPosHistoryPdf}>
+                   <FileText className="w-4 h-4 mr-2" /> Export
                  </Button>
-                 <Button variant="outline" className="h-10 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => setViewMode('pos')}>
-                   <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke POS
+                 <Button variant="outline" className="h-10 flex-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => setViewMode('pos')}>
+                   <ArrowLeft className="w-4 h-4 mr-2" /> Kembali
                  </Button>
-               </>
+               </div>
             )}
           </div>
 
@@ -643,8 +662,8 @@ export const PosView: React.FC = () => {
             </>
           ) : (
             <div className="flex flex-col h-full bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-               <div className="p-4 border-b dark:border-slate-800 flex gap-2">
-                  <div className="relative flex-1">
+               <div className="p-4 border-b dark:border-slate-800 flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1 w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input 
                       placeholder="Cari riwayat berdasar no transaksi atau nama produk..." 
@@ -751,7 +770,7 @@ export const PosView: React.FC = () => {
         </div>
 
         {/* Right Pane - Cart */}
-        <div className="flex-1 w-full lg:max-w-[400px] lg:min-w-[320px] bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col shrink-0 lg:shrink">
+        <div className={`flex-1 w-full lg:max-w-[400px] lg:min-w-[320px] bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex-col shrink-0 lg:shrink ${mobileView === 'cart' && viewMode === 'pos' ? 'flex' : 'hidden lg:flex'}`}>
           {/* Cart Items List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {cart.length === 0 ? (
@@ -802,12 +821,15 @@ export const PosView: React.FC = () => {
                         </div>
                       )}
                    </div>
-                   <div className="flex flex-col items-center gap-1">
-                     <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
-                       <button onClick={() => updateCartQty(item.id, item.inputQty - 1)} className="w-7 h-7 flex items-center justify-center font-bold text-slate-600 hover:bg-white rounded hover:shadow-sm">-</button>
+                   <div className="flex flex-col items-end gap-1 h-full">
+                     <button onClick={() => removeFromCart(item.id)} className="text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 p-1.5 rounded-md self-end mb-2 transition-colors">
+                       <Trash2 className="w-3.5 h-3.5" />
+                     </button>
+                     <div className="flex items-center gap-1 sm:gap-2 bg-slate-100 dark:bg-slate-800 rounded-lg p-1 mt-auto">
+                       <button onClick={() => updateCartQty(item.id, item.inputQty - 1)} className="w-7 h-7 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 rounded hover:shadow-sm">-</button>
                        <Input 
                          type="number"
-                         className="w-14 h-7 text-center font-bold px-1 py-0 appearance-none bg-transparent border-none focus:ring-0 focus:outline-none" 
+                         className="w-10 sm:w-14 h-7 text-center font-bold px-1 py-0 appearance-none bg-transparent border-none focus:ring-0 focus:outline-none dark:text-white" 
                          value={item.inputQty || ''}
                          onChange={e => {
                            const val = parseInt(e.target.value);
@@ -815,10 +837,10 @@ export const PosView: React.FC = () => {
                          }}
                          min={1}
                        />
-                       <button onClick={() => updateCartQty(item.id, item.inputQty + 1)} className="w-7 h-7 flex items-center justify-center font-bold text-slate-600 hover:bg-white rounded hover:shadow-sm">+</button>
+                       <button onClick={() => updateCartQty(item.id, item.inputQty + 1)} className="w-7 h-7 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 rounded hover:shadow-sm">+</button>
                      </div>
                      {item.cartQty !== item.inputQty && (
-                       <div className="text-[10px] text-slate-500 mt-1 font-mono">
+                       <div className="text-[10px] text-slate-500 mt-1 font-mono text-center w-full">
                          = {item.cartQty} {data.units.find(u => u.id === item.unitId)?.name}
                        </div>
                      )}

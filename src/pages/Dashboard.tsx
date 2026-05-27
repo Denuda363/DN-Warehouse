@@ -94,20 +94,39 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const Dashboard: React.FC = () => {
-  const { data } = useAppContext();
+  const { data, currentUser } = useAppContext();
 
-  const totalItems = data.items.length;
-  const totalStock = data.items.reduce((acc, item) => acc + item.stock, 0);
-  const lowStock = data.items.filter(
+  const currentUserCategories = currentUser?.allowedCategoryIds || [];
+  const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
+
+  const displayItems = useMemo(() => {
+    let items = data.items;
+    if (hasCategoryRestriction) {
+      items = items.filter(i => currentUserCategories.includes(i.categoryId));
+    }
+    return items;
+  }, [data.items, hasCategoryRestriction, currentUserCategories]);
+
+  const displayTransactions = useMemo(() => {
+    let txs = data.transactions;
+    if (hasCategoryRestriction) {
+      txs = txs.filter(t => displayItems.some(i => i.id === t.itemId));
+    }
+    return txs;
+  }, [data.transactions, displayItems, hasCategoryRestriction]);
+
+  const totalItems = displayItems.length;
+  const totalStock = displayItems.reduce((acc, item) => acc + item.stock, 0);
+  const lowStock = displayItems.filter(
     (item) => item.stock <= item.minStock,
   ).length;
 
   const thisMonthTransactions = useMemo(() => {
     const now = new Date();
-    return data.transactions.filter(
+    return displayTransactions.filter(
       (t) => new Date(t.date).getMonth() === now.getMonth(),
     );
-  }, [data.transactions]);
+  }, [displayTransactions]);
 
   const itemsIn = thisMonthTransactions.filter((t) => t.type === "IN").length;
   const itemsOut = thisMonthTransactions.filter((t) => t.type === "OUT").length;
@@ -120,10 +139,10 @@ export const Dashboard: React.FC = () => {
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().split("T")[0];
 
-      const inCount = data.transactions
+      const inCount = displayTransactions
         .filter((t) => t.type === "IN" && t.date.startsWith(dateStr))
         .reduce((sum, t) => sum + t.qty, 0);
-      const outCount = data.transactions
+      const outCount = displayTransactions
         .filter((t) => t.type === "OUT" && t.date.startsWith(dateStr))
         .reduce((sum, t) => sum + t.qty, 0);
 
@@ -134,12 +153,12 @@ export const Dashboard: React.FC = () => {
       });
     }
     return res;
-  }, [data.transactions]);
+  }, [displayTransactions]);
 
   // Category Distribution Pie Chart Data
   const categoryDistribution = useMemo(() => {
     const rawCounts: Record<string, number> = {};
-    data.items.forEach((item) => {
+    displayItems.forEach((item) => {
       const cat = data.categories.find((c) => c.id === item.categoryId);
       const name = cat ? cat.name : "Uncategorized";
       rawCounts[name] = (rawCounts[name] || 0) + item.stock;
@@ -151,11 +170,11 @@ export const Dashboard: React.FC = () => {
       .sort((a, b) => b.value - a.value);
 
     return list.slice(0, 8); // top 8 categories
-  }, [data.items, data.categories]);
+  }, [displayItems, data.categories]);
 
   // Top Products Horizontal Bar Chart Data
   const topProductsData = useMemo(() => {
-    return [...data.items]
+    return [...displayItems]
       .sort((a, b) => b.stock - a.stock)
       .slice(0, 5)
       .map((item) => ({
@@ -165,7 +184,7 @@ export const Dashboard: React.FC = () => {
             : item.name,
         Stok: item.stock,
       }));
-  }, [data.items]);
+  }, [displayItems]);
 
   return (
     <motion.div
@@ -551,14 +570,14 @@ export const Dashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto max-h-[300px] pr-2 p-6 pt-0 custom-scrollbar">
               <div className="space-y-3">
-                {data.items.filter((i) => i.stock <= i.minStock).length ===
+                {displayItems.filter((i) => i.stock <= i.minStock).length ===
                 0 ? (
                   <div className="text-center py-12 text-slate-500 text-sm flex flex-col items-center justify-center">
                     <Compass className="w-8 h-8 mb-2 opacity-20 text-emerald-500" />
                     Kondisi logistik prima. Semua stok di atas limit aman.
                   </div>
                 ) : (
-                  data.items
+                  displayItems
                     .filter((i) => i.stock <= i.minStock)
                     .map((item, idx) => (
                       <motion.div

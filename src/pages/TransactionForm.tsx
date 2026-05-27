@@ -65,6 +65,13 @@ export const TransactionForm: React.FC<{ type: 'IN' | 'OUT' }> = ({ type }) => {
     setTimeout(() => setSuccess(false), 3000);
   };
 
+  const currentUserCategories = currentUser?.allowedCategoryIds || [];
+  const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
+  
+  const filteredItems = hasCategoryRestriction 
+    ? data.items.filter(i => currentUserCategories.includes(i.categoryId))
+    : data.items;
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
@@ -98,7 +105,7 @@ export const TransactionForm: React.FC<{ type: 'IN' | 'OUT' }> = ({ type }) => {
                 className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-950"
               >
                 <option value="">-- Pilih Barang --</option>
-                {data.items.map(item => (
+                {filteredItems.map(item => (
                   <option key={item.id} value={item.id}>
                     [{item.sku}] {item.name} - Stok Saat Ini: {item.stock}
                   </option>

@@ -178,7 +178,18 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
     });
   };
 
+  const currentUserCategories = currentUser?.allowedCategoryIds || [];
+  const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
+
   const filteredInvoices = data.purchaseInvoices?.filter(inv => {
+    if (hasCategoryRestriction) {
+      const hasAllowedItem = inv.items.some(invItem => {
+        const product = data.items.find(i => i.id === invItem.itemId);
+        return product && currentUserCategories.includes(product.categoryId);
+      });
+      if (!hasAllowedItem) return false;
+    }
+
     const supplier = data.suppliers.find(s => s.id === inv.supplierId);
     const searchLower = searchTerm.toLowerCase();
     return inv.invoiceNo.toLowerCase().includes(searchLower) || 
@@ -333,7 +344,13 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                                  {inv.items.map(item => {
+                                  {inv.items.filter(item => {
+                                    if (hasCategoryRestriction) {
+                                      const product = data.items.find(i => i.id === item.itemId);
+                                      return product && currentUserCategories.includes(product.categoryId);
+                                    }
+                                    return true;
+                                  }).map(item => {
                                     const product = data.items.find(i => i.id === item.itemId);
                                     let discountComponent = null;
                                     if(item.discountValue > 0) {

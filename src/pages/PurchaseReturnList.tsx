@@ -5,14 +5,22 @@ import { Input } from '../components/ui/Input';
 import { Search, RotateCcw, FileText } from 'lucide-react';
 
 export const PurchaseReturnList: React.FC = () => {
-  const { data } = useAppContext();
+  const { data, currentUser } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
+
+  const currentUserCategories = currentUser?.allowedCategoryIds || [];
+  const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
 
   // Get all return transactions
   const returnTransactions = data.transactions.filter(t => t.type === 'OUT' && t.notes.startsWith('Return Faktur'));
 
   const filteredReturns = returnTransactions.filter(t => {
     const item = data.items.find(i => i.id === t.itemId);
+    
+    if (hasCategoryRestriction && item && !currentUserCategories.includes(item.categoryId)) {
+      return false;
+    }
+
     const supplier = data.suppliers.find(s => s.id === t.supplierId);
     const searchLower = searchTerm.toLowerCase();
     
