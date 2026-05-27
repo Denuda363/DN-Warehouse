@@ -590,24 +590,24 @@ export const MasterData: React.FC = () => {
     <div className="space-y-6 flex flex-col h-[calc(100vh-120px)] relative">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Master Data</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Master Data</h1>
           <p className="text-slate-500 text-sm">
             Kelola data referensi aplikasi Anda.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {activeTab === "low-stock" ? (
             <>
               <Button
                 onClick={exportLowStockExcel}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm border border-emerald-700"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm border border-emerald-700 w-full sm:w-auto"
               >
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
                 Export Excel
               </Button>
               <Button
                 onClick={exportLowStockPDF}
-                className="bg-rose-600 hover:bg-rose-700 text-white shadow-sm border border-rose-700"
+                className="bg-rose-600 hover:bg-rose-700 text-white shadow-sm border border-rose-700 w-full sm:w-auto"
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Export PDF
@@ -618,14 +618,14 @@ export const MasterData: React.FC = () => {
               <Button
                 onClick={downloadTemplate}
                 variant="outline"
-                className="text-slate-600 dark:text-slate-300"
+                className="text-slate-600 dark:text-slate-300 w-full sm:w-auto"
               >
                 <Download className="w-4 h-4 mr-2" /> Template Excel
               </Button>
-              <div className="relative">
+              <div className="relative w-full sm:w-auto flex">
                 <Button
                   variant="outline"
-                  className="text-slate-600 dark:text-slate-300 relative border-emerald-600 text-emerald-600 hover:bg-emerald-50"
+                  className="text-slate-600 dark:text-slate-300 relative border-emerald-600 text-emerald-600 hover:bg-emerald-50 w-full sm:w-auto flex-1"
                 >
                   <FileSpreadsheet className="w-4 h-4 mr-2" /> Import Excel
                   <input
@@ -639,7 +639,7 @@ export const MasterData: React.FC = () => {
               </div>
               <Button
                 onClick={openAddModal}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1 sm:w-auto"
               >
                 <Plus className="w-4 h-4 mr-2" /> Tambah Data
               </Button>
@@ -648,12 +648,12 @@ export const MasterData: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex gap-2 border-b dark:border-slate-800">
+      <div className="flex gap-2 border-b dark:border-slate-800 overflow-x-auto custom-scrollbar">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
                 : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
@@ -665,13 +665,13 @@ export const MasterData: React.FC = () => {
       </div>
 
       <JarvisTransition pageKey={activeTab} mode="tab">
-        <Card className="flex-1 flex flex-col overflow-hidden">
-          <div className="p-4 border-b dark:border-slate-800 flex justify-between items-center">
-            <div className="relative w-72">
+        <Card className="flex-1 flex flex-col overflow-hidden w-full">
+          <div className="p-4 border-b dark:border-slate-800 flex justify-between items-center w-full">
+            <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
               <Input
               placeholder="Cari data..."
-              className="pl-9"
+              className="pl-9 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

@@ -214,17 +214,17 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
   return (
     <div className="space-y-6 flex flex-col h-[calc(100vh-180px)]">
       <Card className="flex-1 flex flex-col overflow-hidden">
-        <div className="p-4 border-b dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
-          <div className="relative w-80">
+        <div className="p-4 border-b dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white dark:bg-slate-900 w-full">
+          <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
             <Input 
               placeholder="Cari No. Faktur atau Supplier..." 
-              className="pl-9"
+              className="pl-9 w-full"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button variant="outline" className="text-slate-600 dark:text-slate-300" onClick={exportPdf}>
+          <Button variant="outline" className="text-slate-600 dark:text-slate-300 w-full sm:w-auto" onClick={exportPdf}>
             <Download className="w-4 h-4 mr-2" /> Export PDF
           </Button>
         </div>

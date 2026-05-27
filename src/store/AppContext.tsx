@@ -116,7 +116,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           const fetched = { ...defaultData, ...snap.data() } as AppData;
           setData(fetched);
 
-          const savedUserStr = localStorage.getItem("gudang_user");
+          const savedUserStr = sessionStorage.getItem("gudang_user") || localStorage.getItem("gudang_user");
           if (savedUserStr) {
             try {
               const parsed = JSON.parse(savedUserStr);
@@ -173,9 +173,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem("gudang_user", JSON.stringify(currentUser));
+      if (localStorage.getItem("gudang_remember") !== "false") {
+        localStorage.setItem("gudang_user", JSON.stringify(currentUser));
+        sessionStorage.removeItem("gudang_user");
+      } else {
+        sessionStorage.setItem("gudang_user", JSON.stringify(currentUser));
+        localStorage.removeItem("gudang_user");
+      }
     } else {
       localStorage.removeItem("gudang_user");
+      sessionStorage.removeItem("gudang_user");
     }
   }, [currentUser]);
 

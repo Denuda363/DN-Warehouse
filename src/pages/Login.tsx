@@ -13,6 +13,15 @@ export const Login: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => {
+    return localStorage.getItem("gudang_remember") !== "false";
+  });
+
+  const handleRememberMeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked;
+    setRememberMe(isChecked);
+    localStorage.setItem("gudang_remember", isChecked ? "true" : "false");
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +141,17 @@ export const Login: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
                 required
               />
             </div>
+          </div>
+
+          <div className="flex items-center space-x-2 py-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              checked={rememberMe}
+              onChange={handleRememberMeChange}
+              className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-slate-950"
+            />
+            <label htmlFor="rememberMe" className="cursor-pointer select-none">Ingat saya</label>
           </div>
 
           <Button
