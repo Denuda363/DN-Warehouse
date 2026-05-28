@@ -22,7 +22,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 type InvoiceItemForm = {
   item: Item | null;
-  qty: number;
+  qty: number | "";
   selectedUnitId: string;
   price: number;
   discountType: "Rp" | "%";
@@ -248,12 +248,14 @@ export const PurchaseInvoiceForm: React.FC<{
       discount = (currentItem.price * discount) / 100;
     }
     const unitPriceAfterDisc = currentItem.price - discount;
-    const itemSubtotal = unitPriceAfterDisc * currentItem.qty;
+    const currentQty = currentItem.qty || 0;
+    const itemSubtotal =
+      unitPriceAfterDisc * (typeof currentQty === "number" ? currentQty : 0);
 
     const newItem: InvoiceItem = {
       id: `item-temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       item: currentItem.item,
-      qty: currentItem.qty,
+      qty: typeof currentQty === "number" ? currentQty : 0,
       selectedUnitId: currentItem.selectedUnitId || currentItem.item.unitId,
       price: currentItem.price,
       discountType: currentItem.discountType,
@@ -283,7 +285,7 @@ export const PurchaseInvoiceForm: React.FC<{
   };
 
   const handleUpdateItemQty = (itemId: string, newQty: number) => {
-    const sanitizedQty = Math.max(1, newQty);
+    const sanitizedQty = Math.max(0, newQty);
     updateActiveDraftItems((items) =>
       items.map((i) => {
         if (i.id === itemId) {
@@ -444,7 +446,7 @@ export const PurchaseInvoiceForm: React.FC<{
 
     logActivity(
       editInvoiceId ? "Edit Pembelian" : "Tambah Pembelian",
-      `Telah memproses ${drafts.length} tagihan. Total Nilai: Rp ${newInvoices.reduce((a, b) => a + b.total, 0).toLocaleString('id-ID')}`
+      `Telah memproses ${drafts.length} tagihan. Total Nilai: Rp ${newInvoices.reduce((a, b) => a + b.total, 0).toLocaleString("id-ID")}`,
     );
 
     updateData({
@@ -781,12 +783,15 @@ export const PurchaseInvoiceForm: React.FC<{
                         </label>
                         <Input
                           type="number"
-                          min="1"
+                          min="0"
                           value={currentItem.qty}
                           onChange={(e) =>
                             setCurrentItem({
                               ...currentItem,
-                              qty: Math.max(1, Number(e.target.value)),
+                              qty:
+                                e.target.value === ""
+                                  ? ""
+                                  : Math.max(0, Number(e.target.value)),
                             })
                           }
                           onKeyDown={(e) => {
@@ -907,15 +912,17 @@ export const PurchaseInvoiceForm: React.FC<{
                     <div className="hidden md:grid grid-cols-12 gap-4 bg-slate-100/70 dark:bg-slate-950/60 p-4 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-500 dark:text-slate-450 uppercase tracking-wider">
                       <div className="col-span-4">NAMA BARANG</div>
                       <div className="col-span-3 text-center">QTY</div>
-                      <div className="col-span-4 text-center">BATCH / EXPIRY</div>
+                      <div className="col-span-4 text-center">
+                        BATCH / EXPIRY
+                      </div>
                       <div className="col-span-1 text-center">AKSI</div>
                     </div>
 
                     <div className="divide-y divide-slate-100 dark:divide-slate-800/65 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-300">
                       {activeDraft.items.length === 0 ? (
                         <div className="px-5 py-12 text-center text-slate-400 bg-slate-50/20 dark:bg-slate-950/5 italic text-xs leading-5">
-                          Belum ada item barang ditambahkan pada draft
-                          faktur ini.
+                          Belum ada item barang ditambahkan pada draft faktur
+                          ini.
                           <br />
                           <span className="text-[10px] uppercase font-bold text-slate-450 dark:text-slate-500 not-italic mt-1.5 block">
                             Gunakan formulir di atas untuk mengisi komoditas
@@ -951,29 +958,42 @@ export const PurchaseInvoiceForm: React.FC<{
                             </div>
 
                             <div className="md:col-span-3 flex justify-between md:justify-center items-center">
-                              <span className="text-xs font-semibold text-slate-500 md:hidden uppercase">QTY</span>
+                              <span className="text-xs font-semibold text-slate-500 md:hidden uppercase">
+                                QTY
+                              </span>
                               <div className="inline-flex items-center gap-1.5 justify-center">
                                 <button
-                                  onClick={() => handleUpdateItemQty(item.id, item.qty - 1)}
+                                  onClick={() =>
+                                    handleUpdateItemQty(item.id, item.qty - 1)
+                                  }
                                   className="w-8 h-8 md:w-7 md:h-7 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded font-bold transition flex items-center justify-center select-none text-sm md:text-xs"
                                 >
                                   -
                                 </button>
                                 <input
                                   type="number"
-                                  min="1"
+                                  min="0"
                                   value={item.qty}
-                                  onChange={(e) => handleUpdateItemQty(item.id, Number(e.target.value))}
+                                  onChange={(e) =>
+                                    handleUpdateItemQty(
+                                      item.id,
+                                      Number(e.target.value),
+                                    )
+                                  }
                                   className="w-16 h-8 md:h-7 text-center text-sm md:text-xs font-bold rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
                                 />
                                 <button
-                                  onClick={() => handleUpdateItemQty(item.id, item.qty + 1)}
+                                  onClick={() =>
+                                    handleUpdateItemQty(item.id, item.qty + 1)
+                                  }
                                   className="w-8 h-8 md:w-7 md:h-7 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded font-bold transition flex items-center justify-center select-none text-sm md:text-xs"
                                 >
                                   +
                                 </button>
                                 <span className="text-xs text-slate-550 font-semibold ml-2 w-12 text-left">
-                                  {data.units.find((u) => u.id === item.selectedUnitId)?.name || ""}
+                                  {data.units.find(
+                                    (u) => u.id === item.selectedUnitId,
+                                  )?.name || ""}
                                 </span>
                               </div>
                             </div>
