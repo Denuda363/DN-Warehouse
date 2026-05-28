@@ -146,6 +146,7 @@ export type AppData = {
     | "red"
     | "amber";
   navStyle?: "sidebar" | "topbar" | "bottombar";
+  mobileNavStyle?: "sidebar" | "topbar" | "bottombar";
   navBgColor?: string;
   navTextColor?: string;
   navIsTransparent?: boolean;

@@ -73,6 +73,7 @@ const defaultData: AppData = {
   theme: "light",
   colorTheme: "indigo",
   navStyle: "sidebar",
+  mobileNavStyle: "bottombar",
 };
 
 type AppContextType = {

@@ -115,12 +115,21 @@ export const Layout: React.FC<{
     },
   ];
 
+  const mobileNav = data.mobileNavStyle || "bottombar";
+  const desktopNav = data.navStyle || "sidebar";
+
   return (
     <div
-      className={`min-h-screen flex h-screen overflow-hidden ${data.theme === "dark" ? "dark bg-slate-950 text-white" : "bg-slate-100 text-slate-900"} ${data.navStyle === "topbar" || data.navStyle === "bottombar" ? "flex-col" : "flex-row"}`}
+      className={`min-h-screen flex h-screen overflow-hidden ${
+        data.theme === "dark"
+          ? "dark bg-slate-950 text-white"
+          : "bg-slate-100 text-slate-900"
+      } ${desktopNav === "sidebar" ? "md:flex-row" : "md:flex-col"} ${
+        mobileNav === "sidebar" ? "max-md:flex-row" : "max-md:flex-col"
+      }`}
     >
       {/* Sidebar - Mobile Overlay */}
-      {sidebarOpen && (
+      {sidebarOpen && mobileNav !== "bottombar" && (
         <div
           className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity"
           onClick={() => setSidebarOpen(false)}
@@ -129,7 +138,21 @@ export const Layout: React.FC<{
 
       {/* Sidebar */}
       <aside
-        className={`fixed ${data.navStyle === "topbar" || data.navStyle === "bottombar" ? "md:hidden" : "md:relative"} inset-y-0 left-0 z-50 h-full ${sidebarOpen ? "w-72 translate-x-0" : "w-20 -translate-x-full md:translate-x-0"} transition-all duration-300 flex flex-col font-sans shrink-0 border-r shadow-2xl md:shadow-none`}
+        className={`fixed ${
+          desktopNav === "topbar" || desktopNav === "bottombar"
+            ? "md:hidden"
+            : "md:relative"
+        } ${
+          mobileNav === "bottombar" ? "max-md:hidden" : ""
+        } inset-y-0 left-0 z-50 h-full ${
+          sidebarOpen
+            ? "w-72 translate-x-0"
+            : `w-20 -translate-x-full ${
+                desktopNav === "topbar" || desktopNav === "bottombar"
+                  ? ""
+                  : "md:translate-x-0"
+              }`
+        } transition-all duration-300 flex flex-col font-sans shrink-0 border-r shadow-2xl md:shadow-none`}
         style={
           data.navIsTransparent
             ? {
@@ -338,81 +361,77 @@ export const Layout: React.FC<{
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Header */}
         <header className="h-16 bg-white dark:bg-slate-900/50 backdrop-blur border-b dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 shrink-0 relative z-30">
-          <div className="flex items-center">
-            {data.navStyle !== "topbar" && data.navStyle !== "bottombar" ? (
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          <div className="flex items-center gap-2">
+            {/* Hamburger button */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className={`p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
+                desktopNav === "sidebar" ? "md:block" : "md:hidden"
+              } ${mobileNav !== "bottombar" ? "block" : "hidden"}`}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            {/* Logo and Brand */}
+            <div
+              className={`items-center gap-4 ${
+                desktopNav === "sidebar" ? "md:hidden" : "md:flex"
+              } ${mobileNav === "sidebar" ? "max-md:hidden" : "max-md:flex"}`}
+            >
+              <div
+                className="flex flex-row items-center cursor-pointer"
+                onClick={() => navigate("dashboard")}
               >
-                <Menu className="w-5 h-5" />
-              </button>
-            ) : (
-              <div className="flex items-center gap-4">
-                <div
-                  className="flex flex-row items-center cursor-pointer"
-                  onClick={() => navigate("dashboard")}
-                >
-                  {data.warehouseProfile?.logo ? (
-                    <img
-                      src={data.warehouseProfile.logo}
-                      alt="Logo"
-                      className={`w-8 h-8 rounded shrink-0 object-contain shadow-sm bg-indigo-500/10 p-1`}
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
-                      <div className="w-3 h-3 bg-white rounded-sm opacity-80"></div>
-                    </div>
-                  )}
-                  <span className="ml-3 font-bold text-sm tracking-widest uppercase hidden md:block">
-                    {data.warehouseProfile?.name || "ROUNDS"}
-                  </span>
-                </div>
-
-                {data.navStyle === "topbar" && (
-                  <div className="hidden md:flex items-center gap-1 ml-4 border-l dark:border-slate-800 pl-4">
-                    {menus.map((m) => {
-                      const Icon = m.icon;
-                      const active = currentPath === m.path;
-                      if (
-                        currentUser?.role !== "ADMIN" &&
-                        m.perm &&
-                        !(currentUser?.permissions || []).includes(m.perm)
-                      )
-                        return null;
-
-                      return (
-                        <button
-                          key={m.path}
-                          onClick={() => navigate(m.path)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                            active
-                              ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600"
-                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                          }`}
-                          title={m.name}
-                        >
-                          <Icon className="w-4 h-4" />
-                          <span className="hidden lg:inline">{m.name}</span>
-                        </button>
-                      );
-                    })}
+                {data.warehouseProfile?.logo ? (
+                  <img
+                    src={data.warehouseProfile.logo}
+                    alt="Logo"
+                    className={`w-8 h-8 rounded shrink-0 object-contain shadow-sm bg-indigo-500/10 p-1`}
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 shadow-sm">
+                    <div className="w-3 h-3 bg-white rounded-sm opacity-80"></div>
                   </div>
                 )}
+                <span className="ml-3 font-bold text-sm tracking-widest uppercase hidden sm:block">
+                  {data.warehouseProfile?.name || "ROUNDS"}
+                </span>
               </div>
-            )}
+
+              {desktopNav === "topbar" && (
+                <div className="hidden md:flex items-center gap-1 ml-4 border-l dark:border-slate-800 pl-4">
+                  {menus.map((m) => {
+                    const Icon = m.icon;
+                    const active = currentPath === m.path;
+                    if (
+                      currentUser?.role !== "ADMIN" &&
+                      m.perm &&
+                      !(currentUser?.permissions || []).includes(m.perm)
+                    )
+                      return null;
+
+                    return (
+                      <button
+                        key={m.path}
+                        onClick={() => navigate(m.path)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                          active
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600"
+                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        }`}
+                        title={m.name}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span className="hidden lg:inline">{m.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-6">
-            {(data.navStyle === "topbar" || data.navStyle === "bottombar") && (
-              <div className="md:hidden">
-                <button
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <Menu className="w-5 h-5" />
-                </button>
-              </div>
-            )}
             <div>
               <button
                 className={`p-2.5 relative rounded-xl transition-all duration-200 active:scale-95 ${
@@ -434,7 +453,7 @@ export const Layout: React.FC<{
                 )}
               </button>
             </div>
-            {(data.navStyle === "topbar" || data.navStyle === "bottombar") && (
+            {(desktopNav === "topbar" || desktopNav === "bottombar") && (
               <div className="hidden md:flex items-center gap-2 pl-4 border-l border-slate-200 dark:border-slate-800">
                 <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-sm font-bold text-indigo-700 dark:text-indigo-300">
                   {currentUser?.username?.charAt(0).toUpperCase() || "U"}
@@ -472,8 +491,12 @@ export const Layout: React.FC<{
         </main>
 
         {/* Bottom Navigation Bar */}
-        {data.navStyle === "bottombar" && (
-          <nav className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 py-2 flex justify-around items-center shrink-0 z-30 shadow-lg">
+        {(mobileNav === "bottombar" || desktopNav === "bottombar") && (
+          <nav
+            className={`bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 py-2 flex justify-around items-center shrink-0 z-30 shadow-lg ${
+              desktopNav === "bottombar" ? "md:flex" : "md:hidden"
+            } ${mobileNav === "bottombar" ? "flex" : "hidden"}`}
+          >
             {menus.map((m) => {
               const Icon = m.icon;
               const active = currentPath === m.path;

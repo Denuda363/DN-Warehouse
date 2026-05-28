@@ -187,7 +187,7 @@ export const Settings: React.FC = () => {
                 <div>
                   <p className="text-sm font-medium mb-3 flex items-center">
                     <LayoutTemplate className="w-4 h-4 mr-2 text-slate-500" />{" "}
-                    Gaya Navigasi
+                    Gaya Navigasi Desktop (Layar Lebar)
                   </p>
                   <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                     <Button
@@ -215,6 +215,49 @@ export const Settings: React.FC = () => {
                         data.navStyle === "bottombar" ? "default" : "outline"
                       }
                       onClick={() => updateData({ navStyle: "bottombar" })}
+                      className="flex-1 justify-center"
+                    >
+                      Bawah (Bottombar)
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <p className="text-sm font-medium mb-3 flex items-center">
+                    <LayoutTemplate className="w-4 h-4 mr-2 text-slate-500" />{" "}
+                    Gaya Navigasi Mobile (Layar Kecil)
+                  </p>
+                  <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+                    <Button
+                      variant={
+                        data.mobileNavStyle === "sidebar"
+                          ? "default"
+                          : "outline"
+                      }
+                      onClick={() => updateData({ mobileNavStyle: "sidebar" })}
+                      className="flex-1 justify-center"
+                    >
+                      Sidebar
+                    </Button>
+                    <Button
+                      variant={
+                        data.mobileNavStyle === "topbar" ? "default" : "outline"
+                      }
+                      onClick={() => updateData({ mobileNavStyle: "topbar" })}
+                      className="flex-1 justify-center"
+                    >
+                      Atas (Topbar)
+                    </Button>
+                    <Button
+                      variant={
+                        data.mobileNavStyle === "bottombar" ||
+                        !data.mobileNavStyle
+                          ? "default"
+                          : "outline"
+                      }
+                      onClick={() =>
+                        updateData({ mobileNavStyle: "bottombar" })
+                      }
                       className="flex-1 justify-center"
                     >
                       Bawah (Bottombar)
