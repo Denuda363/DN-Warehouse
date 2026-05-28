@@ -29,7 +29,8 @@ export const PosView: React.FC = () => {
   const [returnTxModal, setReturnTxModal] = useState<{ id: string, qty: number, maxQty: number } | null>(null);
 
   const [txDate, setTxDate] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [historyDateFilter, setHistoryDateFilter] = useState<'today' | '7days' | 'all'>('today');
+  const [historyStartDate, setHistoryStartDate] = useState<string>('');
+  const [historyEndDate, setHistoryEndDate] = useState<string>('');
 
   const colors = [
     'bg-amber-400', 'bg-lime-400', 'bg-purple-600', 'bg-stone-400',
@@ -372,15 +373,9 @@ export const PosView: React.FC = () => {
 
   const filteredHistoryGroups = historyGroupsList.filter(group => {
     // Date filter logic
-    if (historyDateFilter === 'today') {
-      const today = new Date().toISOString().slice(0, 10);
-      if (!group.date.startsWith(today)) return false;
-    } else if (historyDateFilter === '7days') {
-      const groupDate = new Date(group.date);
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      if (groupDate < sevenDaysAgo) return false;
-    }
+    const groupDateOnly = group.date.substring(0, 10);
+    if (historyStartDate && groupDateOnly < historyStartDate) return false;
+    if (historyEndDate && groupDateOnly > historyEndDate) return false;
 
     const matchId = group.id.toLowerCase().includes(historySearch.toLowerCase());
     const matchItemName = group.transactions.some(tx => {
@@ -672,15 +667,22 @@ export const PosView: React.FC = () => {
                       onChange={e => setHistorySearch(e.target.value)}
                     />
                   </div>
-                  <select 
-                    value={historyDateFilter} 
-                    onChange={e => setHistoryDateFilter(e.target.value as any)}
-                    className="flex h-11 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-950 font-medium"
-                  >
-                    <option value="today">Hari Ini</option>
-                    <option value="7days">7 Hari Terakhir</option>
-                    <option value="all">Semua Transaksi</option>
-                  </select>
+                  <div className="flex gap-2">
+                    <Input
+                      type="date"
+                      value={historyStartDate}
+                      onChange={e => setHistoryStartDate(e.target.value)}
+                      className="h-11 w-full sm:w-auto text-sm"
+                      title="Tanggal Awal"
+                    />
+                    <Input
+                      type="date"
+                      value={historyEndDate}
+                      onChange={e => setHistoryEndDate(e.target.value)}
+                      className="h-11 w-full sm:w-auto text-sm"
+                      title="Tanggal Akhir"
+                    />
+                  </div>
                </div>
                <div className="flex-1 overflow-y-auto p-4">
                   <div className="space-y-3">

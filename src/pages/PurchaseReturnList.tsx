@@ -7,6 +7,8 @@ import { Search, RotateCcw, FileText } from 'lucide-react';
 export const PurchaseReturnList: React.FC = () => {
   const { data, currentUser } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const currentUserCategories = currentUser?.allowedCategoryIds || [];
   const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
@@ -15,6 +17,10 @@ export const PurchaseReturnList: React.FC = () => {
   const returnTransactions = data.transactions.filter(t => t.type === 'OUT' && t.notes.startsWith('Return Faktur'));
 
   const filteredReturns = returnTransactions.filter(t => {
+    const dateStr = t.returnDate || t.date;
+    if (startDate && dateStr.substring(0, 10) < startDate) return false;
+    if (endDate && dateStr.substring(0, 10) > endDate) return false;
+
     const item = data.items.find(i => i.id === t.itemId);
     
     if (hasCategoryRestriction && item && !currentUserCategories.includes(item.categoryId)) {
@@ -33,14 +39,30 @@ export const PurchaseReturnList: React.FC = () => {
   return (
     <div className="space-y-6 flex flex-col h-[calc(100vh-180px)]">
       <Card className="flex-1 flex flex-col overflow-hidden">
-        <div className="p-4 border-b dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
-          <div className="relative w-80">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-            <Input 
-              placeholder="Cari No. Faktur, Barang, Supplier, Keterangan..." 
-              className="pl-9"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+        <div className="p-4 border-b dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white dark:bg-slate-900 w-full">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+              <Input 
+                placeholder="Cari No. Faktur, Barang, Supplier..." 
+                className="pl-9 w-full"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full sm:w-auto text-sm"
+              title="Tanggal Awal"
+            />
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full sm:w-auto text-sm"
+              title="Tanggal Akhir"
             />
           </div>
         </div>

@@ -35,6 +35,8 @@ export const calculateReturnTotal = (inv: PurchaseInvoice) => {
 export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = ({ onEdit }) => {
   const { data, updateData, currentUser, logActivity } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const [returnModal, setReturnModal] = useState<{ isOpen: boolean, invoiceId: string, itemId: string, maxQty: number } | null>(null);
   const [returnQty, setReturnQty] = useState<number>(0);
@@ -182,6 +184,9 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
   const hasCategoryRestriction = currentUser?.role !== 'ADMIN' && currentUserCategories.length > 0;
 
   const filteredInvoices = data.purchaseInvoices?.filter(inv => {
+    if (startDate && inv.invoiceDate.substring(0, 10) < startDate) return false;
+    if (endDate && inv.invoiceDate.substring(0, 10) > endDate) return false;
+
     if (hasCategoryRestriction) {
       const hasAllowedItem = inv.items.some(invItem => {
         const product = data.items.find(i => i.id === invItem.itemId);
@@ -226,16 +231,32 @@ export const PurchaseInvoiceList: React.FC<{ onEdit: (id: string) => void }> = (
     <div className="space-y-6 flex flex-col h-[calc(100vh-180px)]">
       <Card className="flex-1 flex flex-col overflow-hidden">
         <div className="p-4 border-b dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white dark:bg-slate-900 w-full">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-            <Input 
-              placeholder="Cari No. Faktur atau Supplier..." 
-              className="pl-9 w-full"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-60">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+              <Input 
+                placeholder="Cari No. Faktur atau Supplier..." 
+                className="pl-9 w-full"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full sm:w-auto text-sm"
+              title="Tanggal Awal"
+            />
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full sm:w-auto text-sm"
+              title="Tanggal Akhir"
             />
           </div>
-          <Button variant="outline" className="text-slate-600 dark:text-slate-300 w-full sm:w-auto" onClick={exportPdf}>
+          <Button variant="outline" className="text-slate-600 dark:text-slate-300 w-full sm:w-auto shrink-0" onClick={exportPdf}>
             <Download className="w-4 h-4 mr-2" /> Export PDF
           </Button>
         </div>
