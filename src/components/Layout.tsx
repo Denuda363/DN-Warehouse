@@ -117,7 +117,7 @@ export const Layout: React.FC<{
 
   return (
     <div
-      className={`min-h-screen flex h-screen overflow-hidden ${data.theme === "dark" ? "dark bg-slate-950 text-white" : "bg-slate-100 text-slate-900"} ${data.navStyle === "topbar" ? "flex-col" : "flex-row"}`}
+      className={`min-h-screen flex h-screen overflow-hidden ${data.theme === "dark" ? "dark bg-slate-950 text-white" : "bg-slate-100 text-slate-900"} ${data.navStyle === "topbar" || data.navStyle === "bottombar" ? "flex-col" : "flex-row"}`}
     >
       {/* Sidebar - Mobile Overlay */}
       {sidebarOpen && (
@@ -129,7 +129,7 @@ export const Layout: React.FC<{
 
       {/* Sidebar */}
       <aside
-        className={`fixed ${data.navStyle === "topbar" ? "md:hidden" : "md:relative"} inset-y-0 left-0 z-50 h-full ${sidebarOpen ? "w-72 translate-x-0" : "w-20 -translate-x-full md:translate-x-0"} transition-all duration-300 flex flex-col font-sans shrink-0 border-r shadow-2xl md:shadow-none`}
+        className={`fixed ${data.navStyle === "topbar" || data.navStyle === "bottombar" ? "md:hidden" : "md:relative"} inset-y-0 left-0 z-50 h-full ${sidebarOpen ? "w-72 translate-x-0" : "w-20 -translate-x-full md:translate-x-0"} transition-all duration-300 flex flex-col font-sans shrink-0 border-r shadow-2xl md:shadow-none`}
         style={
           data.navIsTransparent
             ? {
@@ -339,7 +339,7 @@ export const Layout: React.FC<{
         {/* Header */}
         <header className="h-16 bg-white dark:bg-slate-900/50 backdrop-blur border-b dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 shrink-0 relative z-30">
           <div className="flex items-center">
-            {data.navStyle !== "topbar" ? (
+            {data.navStyle !== "topbar" && data.navStyle !== "bottombar" ? (
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-2 -ml-2 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -368,40 +368,42 @@ export const Layout: React.FC<{
                   </span>
                 </div>
 
-                <div className="hidden md:flex items-center gap-1 ml-4 border-l dark:border-slate-800 pl-4">
-                  {menus.map((m) => {
-                    const Icon = m.icon;
-                    const active = currentPath === m.path;
-                    if (
-                      currentUser?.role !== "ADMIN" &&
-                      m.perm &&
-                      !(currentUser?.permissions || []).includes(m.perm)
-                    )
-                      return null;
+                {data.navStyle === "topbar" && (
+                  <div className="hidden md:flex items-center gap-1 ml-4 border-l dark:border-slate-800 pl-4">
+                    {menus.map((m) => {
+                      const Icon = m.icon;
+                      const active = currentPath === m.path;
+                      if (
+                        currentUser?.role !== "ADMIN" &&
+                        m.perm &&
+                        !(currentUser?.permissions || []).includes(m.perm)
+                      )
+                        return null;
 
-                    return (
-                      <button
-                        key={m.path}
-                        onClick={() => navigate(m.path)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                          active
-                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600"
-                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }`}
-                        title={m.name}
-                      >
-                        <Icon className="w-4 h-4" />
-                        <span className="hidden lg:inline">{m.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                      return (
+                        <button
+                          key={m.path}
+                          onClick={() => navigate(m.path)}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                            active
+                              ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600"
+                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          }`}
+                          title={m.name}
+                        >
+                          <Icon className="w-4 h-4" />
+                          <span className="hidden lg:inline">{m.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-6">
-            {data.navStyle === "topbar" && (
+            {(data.navStyle === "topbar" || data.navStyle === "bottombar") && (
               <div className="md:hidden">
                 <button
                   onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -432,7 +434,7 @@ export const Layout: React.FC<{
                 )}
               </button>
             </div>
-            {data.navStyle === "topbar" && (
+            {(data.navStyle === "topbar" || data.navStyle === "bottombar") && (
               <div className="hidden md:flex items-center gap-2 pl-4 border-l border-slate-200 dark:border-slate-800">
                 <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-sm font-bold text-indigo-700 dark:text-indigo-300">
                   {currentUser?.username?.charAt(0).toUpperCase() || "U"}
@@ -468,6 +470,39 @@ export const Layout: React.FC<{
             </JarvisTransition>
           </div>
         </main>
+
+        {/* Bottom Navigation Bar */}
+        {data.navStyle === "bottombar" && (
+          <nav className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-4 py-2 flex justify-around items-center shrink-0 z-30 shadow-lg">
+            {menus.map((m) => {
+              const Icon = m.icon;
+              const active = currentPath === m.path;
+              if (
+                currentUser?.role !== "ADMIN" &&
+                m.perm &&
+                !(currentUser?.permissions || []).includes(m.perm)
+              )
+                return null;
+
+              return (
+                <button
+                  key={m.path}
+                  onClick={() => navigate(m.path)}
+                  className={`flex flex-col items-center justify-center gap-1 px-1 py-1 rounded-lg flex-1 text-center transition-all active:scale-95 ${
+                    active
+                      ? "text-indigo-600 dark:text-indigo-400 font-bold"
+                      : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${active ? "scale-110" : ""}`} />
+                  <span className="text-[10px] sm:text-xs tracking-tight font-medium truncate max-w-[65px] sm:max-w-none">
+                    {m.name}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+        )}
       </div>
 
       {/* Floating Notification Drawer Panel */}

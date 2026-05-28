@@ -189,7 +189,7 @@ export const Settings: React.FC = () => {
                     <LayoutTemplate className="w-4 h-4 mr-2 text-slate-500" />{" "}
                     Gaya Navigasi
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap sm:flex-nowrap">
                     <Button
                       variant={
                         data.navStyle === "sidebar" || !data.navStyle
@@ -197,7 +197,7 @@ export const Settings: React.FC = () => {
                           : "outline"
                       }
                       onClick={() => updateData({ navStyle: "sidebar" })}
-                      className="w-full justify-center"
+                      className="flex-1 justify-center"
                     >
                       Sidebar Klasik
                     </Button>
@@ -206,9 +206,18 @@ export const Settings: React.FC = () => {
                         data.navStyle === "topbar" ? "default" : "outline"
                       }
                       onClick={() => updateData({ navStyle: "topbar" })}
-                      className="w-full justify-center"
+                      className="flex-1 justify-center"
                     >
                       Atas (Topbar)
+                    </Button>
+                    <Button
+                      variant={
+                        data.navStyle === "bottombar" ? "default" : "outline"
+                      }
+                      onClick={() => updateData({ navStyle: "bottombar" })}
+                      className="flex-1 justify-center"
+                    >
+                      Bawah (Bottombar)
                     </Button>
                   </div>
                 </div>
