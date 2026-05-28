@@ -392,12 +392,11 @@ export const MasterData: React.FC = () => {
       const items = lowStockBySupplier[supplierId];
       items.forEach((item) => {
         rows.push({
-          "Supplier Utama": supplierName,
-          SKU: item.sku,
-          "Nama Produk": item.name,
-          "Stok Saat Ini": item.stock,
-          "Minimum Stok": item.minStock,
-          Satuan: data.units.find((u) => u.id === item.unitId)?.name || "-",
+          "Nama Barang": item.name,
+          "Stok": item.stock,
+          "Satuan": data.units.find((u) => u.id === item.unitId)?.name || "-",
+          "Kategori": data.categories.find((c) => c.id === item.categoryId)?.name || "-",
+          "Supplier": supplierName,
           "Supplier Alternatif": getSupplierName(item.altSupplierId),
         });
       });
