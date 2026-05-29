@@ -198,6 +198,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [firebaseUser]);
 
   useEffect(() => {
+    if (isLoading) return;
+
     if (currentUser) {
       if (localStorage.getItem("gudang_remember") !== "false") {
         localStorage.setItem("gudang_user", JSON.stringify(currentUser));
@@ -210,7 +212,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.removeItem("gudang_user");
       sessionStorage.removeItem("gudang_user");
     }
-  }, [currentUser]);
+  }, [currentUser, isLoading]);
 
   const updateData = async (partial: Partial<AppData>) => {
     const newData = { ...data, ...partial };
