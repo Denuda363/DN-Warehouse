@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { useAppContext } from "../store/AppContext";
 import { Button } from "./ui/Button";
 import { JarvisTransition } from "./JarvisTransition";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import {
   LayoutDashboard,
   ArrowRightLeft,
@@ -15,10 +18,13 @@ import {
   Bell,
   Menu,
   FileText,
+  FileSpreadsheet,
   X,
   AlertTriangle,
   Calendar,
   History,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 export const Layout: React.FC<{
@@ -29,9 +35,106 @@ export const Layout: React.FC<{
   const { currentUser, setCurrentUser, data, logActivity } = useAppContext();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [lowStockCollapsed, setLowStockCollapsed] = useState(false);
 
   // Notifications computing
-  const lowStockItems: any[] = [];
+  const lowStockItems = data.items.filter(
+    (item) => item.stock <= (item.minStock !== undefined ? item.minStock : 5)
+  );
+
+  const lowStockBySupplier = lowStockItems.reduce(
+    (acc, item) => {
+      const key = item.supplierId || "unknown";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(item);
+      return acc;
+    },
+    {} as Record<string, any[]>,
+  );
+
+  const getSupplierName = (id?: string) => {
+    if (!id) return "Tanpa Supplier";
+    return (
+      data.suppliers.find((s) => s.id === id)?.name || "Supplier Tidak Dikenal"
+    );
+  };
+
+  const exportLowStockPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Laporan Stok Menipis", 14, 20);
+
+    let yPos = 30;
+
+    Object.keys(lowStockBySupplier).forEach((supplierId) => {
+      const supplierName = getSupplierName(supplierId);
+      const items = lowStockBySupplier[supplierId];
+
+      doc.setFontSize(12);
+      doc.text(`Supplier: ${supplierName}`, 14, yPos);
+      yPos += 5;
+
+      const head = [
+        [
+          "SKU",
+          "Nama Produk",
+          "Stok",
+          "Min. Stok",
+          "Satuan",
+          "Supplier Alternatif",
+        ],
+      ];
+      const body = items.map((item) => [
+        item.sku,
+        item.name,
+        item.stock.toString(),
+        (item.minStock !== undefined ? item.minStock : 5).toString(),
+        data.units.find((u) => u.id === item.unitId)?.name || "-",
+        getSupplierName(item.altSupplierId),
+      ]);
+
+      autoTable(doc, {
+        startY: yPos,
+        head,
+        body,
+        theme: "grid",
+        headStyles: { fillColor: [79, 70, 229] },
+        margin: { top: 10 },
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+    });
+
+    doc.save("Laporan_Stok_Menipis.pdf");
+  };
+
+  const exportLowStockExcel = () => {
+    const rows: any[] = [];
+    Object.keys(lowStockBySupplier).forEach((supplierId) => {
+      const supplierName = getSupplierName(supplierId);
+      const items = lowStockBySupplier[supplierId];
+      items.forEach((item) => {
+        rows.push({
+          "Nama Barang": item.name,
+          "Stok": item.stock,
+          "Satuan": data.units.find((u) => u.id === item.unitId)?.name || "-",
+          "Kategori": data.categories.find((c) => c.id === item.categoryId)?.name || "-",
+          "Supplier": supplierName,
+          "Supplier Alternatif": getSupplierName(item.altSupplierId),
+        });
+      });
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Stok Menipis");
+    XLSX.writeFile(workbook, "Laporan_Stok_Menipis.xlsx");
+  };
 
   const soonInMs = 30 * 24 * 60 * 60 * 1000;
   const expiringItems: {
@@ -591,24 +694,110 @@ export const Layout: React.FC<{
               {/* Filtering / Summary Grid */}
               <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-slate-800 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 py-3 shrink-0">
                 <div>
-                  <div className="font-bold text-rose-600 dark:text-rose-400 text-sm">
+                  <div className="font-bold text-rose-600 dark:text-rose-400 text-sm animate-pulse">
                     {lowStockItems.length}
-              </div>
+                  </div>
+                  <div className="font-semibold text-slate-600 dark:text-slate-300">Stok Menipis</div>
+                </div>
+                <div>
                   <div className="font-bold text-orange-500 dark:text-orange-400 text-sm">
                     {expiringItems.length}
                   </div>
-                  <div>Hampir Expired</div>
+                  <div className="font-semibold text-slate-600 dark:text-slate-300">Hampir Expired</div>
                 </div>
                 <div>
                   <div className="font-bold text-indigo-600 dark:text-indigo-400 text-sm">
                     {recentTxs.length}
                   </div>
-                  <div>Arus Baru</div>
+                  <div className="font-semibold text-slate-600 dark:text-slate-300">Arus Baru</div>
                 </div>
               </div>
 
               {/* List Content */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30 dark:bg-slate-950/20 custom-scrollbar">
+                {/* Low Stock Items Section */}
+                {lowStockItems.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center bg-rose-50/25 dark:bg-rose-950/10 p-1.5 rounded-lg border border-rose-200/40 dark:border-rose-900/40 mb-3 select-none">
+                      <button 
+                        type="button"
+                        onClick={() => setLowStockCollapsed(!lowStockCollapsed)}
+                        className="flex items-center gap-1.5 cursor-pointer hover:opacity-85 transition-opacity text-left bg-transparent border-none p-1 shrink hover:bg-rose-50/50 dark:hover:bg-rose-950/20 rounded-md focus:outline-none"
+                        title={lowStockCollapsed ? "Tampilkan Stok Menipis" : "Sembunyikan Stok Menipis"}
+                      >
+                        {lowStockCollapsed ? (
+                          <ChevronDown className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
+                        ) : (
+                          <ChevronUp className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
+                        )}
+                        <span className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1.5 font-mono">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
+                          </span>
+                          Stok Menipis ({lowStockItems.length})
+                        </span>
+                      </button>
+                      <div className="flex gap-1 shrink-0">
+                        <Button
+                          onClick={exportLowStockExcel}
+                          size="sm"
+                          className="px-2 py-0.5 text-[10px] h-6 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs border border-emerald-750"
+                        >
+                          <FileSpreadsheet className="w-3 h-3 mr-1 shrink-0" />
+                          Excel
+                        </Button>
+                        <Button
+                          onClick={exportLowStockPDF}
+                          size="sm"
+                          className="px-2 py-0.5 text-[10px] h-6 bg-rose-600 hover:bg-rose-700 text-white shadow-xs border border-rose-750"
+                        >
+                          <FileText className="w-3 h-3 mr-1 shrink-0" />
+                          PDF
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {!lowStockCollapsed && (
+                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
+                        {lowStockItems.map((item) => {
+                          const isOut = item.stock <= 0;
+                          return (
+                            <div
+                              key={`low-${item.id}`}
+                              className={`p-3 rounded-xl border text-xs flex gap-3 shadow-xs transition-colors ${
+                                isOut 
+                                  ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40 hover:border-red-300"
+                                  : "bg-rose-500/5 dark:bg-rose-950/10 border-rose-200/50 dark:border-rose-900/30 hover:border-rose-300"
+                              }`}
+                            >
+                              <div className={`p-2 rounded-lg self-start ${isOut ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'}`}>
+                                <AlertTriangle className="w-4 h-4 shrink-0 animate-pulse" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <span className="font-bold text-slate-800 dark:text-stone-200 block truncate text-[11px]">
+                                  {item.name}
+                                </span>
+                                <p className="text-slate-500 dark:text-slate-450 mt-0.5 text-[10px] font-mono leading-tight truncate">
+                                  SKU: {item.sku || '-'} • Sup: {getSupplierName(item.supplierId)}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1.5">
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold font-mono ${isOut ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-405' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-405'}`}>
+                                    Stok: {item.stock} {data.units.find((u) => u.id === item.unitId)?.name || ""}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                                    Min: {item.minStock !== undefined ? item.minStock : 5}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Expiring Items Section */}
                 {expiringItems.length > 0 && (
                   <div className="space-y-2">

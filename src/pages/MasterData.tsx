@@ -57,7 +57,7 @@ const generateSkuForCategory = (categoryId: string, categories: Category[], item
 export const MasterData: React.FC = () => {
   const { data, updateData, currentUser, logActivity } = useAppContext();
   const [activeTab, setActiveTab] = useState<
-    "items" | "categories" | "units" | "suppliers" | "staffs"
+    "items" | "categories" | "units" | "suppliers" | "staffs" | "low-stock"
   >("items");
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -90,6 +90,7 @@ export const MasterData: React.FC = () => {
     { id: "units", label: "Satuan", perm: "MASTER_TAB_UNITS" },
     { id: "suppliers", label: "Supplier", perm: "MASTER_TAB_SUPPLIERS" },
     { id: "staffs", label: "Staff Gudang", perm: "MASTER_TAB_STAFF" },
+    { id: "low-stock", label: "Stok Menipis", perm: "MASTER_TAB_LOWSTOCK" },
   ];
 
   const tabs = allTabs.filter((t) => {
@@ -307,10 +308,18 @@ export const MasterData: React.FC = () => {
       setEditStaffData(item);
       setModalType("staffs");
     }
-  };
-
-
-
+  };  const lowStockItems = filteredItems.filter(
+    (item) => item.stock <= (item.minStock !== undefined ? item.minStock : 0),
+  );
+  const lowStockBySupplier = lowStockItems.reduce(
+    (acc, item) => {
+      const key = item.supplierId || "unknown";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(item);
+      return acc;
+    },
+    {} as Record<string, Item[]>,
+  );
   const getSupplierName = (id?: string) => {
     if (!id) return "Tanpa Supplier";
     return (
@@ -580,6 +589,25 @@ export const MasterData: React.FC = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          {activeTab === "low-stock" ? (
+            <>
+              <Button
+                onClick={exportLowStockExcel}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm border border-emerald-750 w-full sm:w-auto"
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Export Excel
+              </Button>
+              <Button
+                onClick={exportLowStockPDF}
+                className="bg-rose-600 hover:bg-rose-700 text-white shadow-sm border border-rose-750 w-full sm:w-auto"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Export PDF
+              </Button>
+            </>
+          ) : (
+            <>
               <Button
                 onClick={downloadTemplate}
                 variant="outline"
@@ -608,6 +636,8 @@ export const MasterData: React.FC = () => {
               >
                 <Plus className="w-4 h-4 mr-2" /> Tambah Data
               </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -684,6 +714,20 @@ export const MasterData: React.FC = () => {
                   <th className="px-6 py-4 font-medium">Nama Staff Gudang</th>
                   <th className="px-6 py-4 font-medium">Telepon</th>
                   <th className="px-6 py-4 text-right">Aksi</th>
+                </tr>
+              )}
+              {activeTab === "low-stock" && (
+                <tr>
+                  <th className="px-6 py-4 font-medium">Supplier Utama</th>
+                  <th className="px-6 py-4 font-medium">SKU</th>
+                  <th className="px-6 py-4 font-medium">Nama Produk</th>
+                  <th className="px-6 py-4 font-medium text-center">
+                    Stok Saat Ini
+                  </th>
+                  <th className="px-6 py-4 font-medium text-center">
+                    Min. Stok
+                  </th>
+                  <th className="px-6 py-4 font-medium">Supplier Alternatif</th>
                 </tr>
               )}
 
@@ -922,6 +966,58 @@ export const MasterData: React.FC = () => {
                       </td>
                     </tr>
                   ))}
+              {activeTab === "low-stock" &&
+                Object.keys(lowStockBySupplier).map((supplierId) => {
+                  const items = lowStockBySupplier[supplierId].filter(
+                    (i) =>
+                      i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      (i.sku &&
+                        i.sku.toLowerCase().includes(searchTerm.toLowerCase())),
+                  );
+
+                  if (items.length === 0) return null;
+
+                  return items.map((item, idx) => (
+                    <tr
+                      key={`${supplierId}-${item.id}`}
+                      className="hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                    >
+                      {idx === 0 && (
+                        <td
+                          className="px-6 py-3 font-bold text-indigo-700 bg-indigo-50/50 dark:bg-indigo-900/20 dark:text-indigo-300 align-top border-b-0"
+                          rowSpan={items.length}
+                        >
+                          {getSupplierName(supplierId)}
+                        </td>
+                      )}
+                      <td className="px-6 py-3 font-mono text-xs text-slate-500">
+                        {item.sku || "-"}
+                      </td>
+                      <td className="px-6 py-3 font-medium">{item.name}</td>
+                      <td className="px-6 py-3 text-center font-bold text-rose-600 dark:text-rose-400">
+                        {item.stock}{" "}
+                        {data.units.find((u) => u.id === item.unitId)?.name}
+                      </td>
+                      <td className="px-6 py-3 text-center text-slate-500 font-medium">
+                        {item.minStock !== undefined ? item.minStock : 5}
+                      </td>
+                      <td className="px-6 py-3 text-slate-600 dark:text-slate-400">
+                        {getSupplierName(item.altSupplierId)}
+                      </td>
+                    </tr>
+                  ));
+                })}
+              {activeTab === "low-stock" &&
+                Object.keys(lowStockBySupplier).length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-8 text-center text-slate-500 italic"
+                    >
+                      Semua stok dalam keadaan aman.
+                    </td>
+                  </tr>
+                )}
             </tbody>
           </table>
         </div>

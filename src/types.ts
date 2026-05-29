@@ -40,6 +40,7 @@ export type Item = {
   unitId: string;
   stock: number;
   unbatchedStock?: number;
+  minStock?: number;
   sellingPrice?: number;
   expiryDate?: string;
   batchNumber?: string;

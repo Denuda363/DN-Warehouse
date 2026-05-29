@@ -27,6 +27,7 @@ export const UsersManagement: React.FC = () => {
     { id: "MASTER_TAB_UNITS", label: "Tab: Satuan" },
     { id: "MASTER_TAB_SUPPLIERS", label: "Tab: Supplier" },
     { id: "MASTER_TAB_STAFF", label: "Tab: Staff Gudang" },
+    { id: "MASTER_TAB_LOWSTOCK", label: "Tab: Stok Menipis" },
     { id: "MANAGE_USERS", label: "Menu: Pengaturan" },
     { id: "SETTING_TAB_THEME", label: "Tab: Tampilan Tema" },
     { id: "SETTING_TAB_BACKUP", label: "Tab: Backup & Restore" },
