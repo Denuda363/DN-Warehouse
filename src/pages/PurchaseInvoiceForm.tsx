@@ -79,6 +79,7 @@ export const PurchaseInvoiceForm: React.FC<{
   const [drafts, setDrafts] = useState<DraftInvoice[]>([]);
   const [activeDraftId, setActiveDraftId] = useState<string>("");
   const [draftSearchQuery, setDraftSearchQuery] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Memoized filter for drafts
   const filteredDrafts = useMemo(() => {
@@ -493,11 +494,12 @@ export const PurchaseInvoiceForm: React.FC<{
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Left Side: Draft Queue Sidebar Panel */}
         <AnimatePresence>
-          {!editInvoiceId && (
+          {!editInvoiceId && sidebarOpen && (
             <motion.div
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="lg:col-span-1 space-y-4"
+              initial={{ opacity: 0, x: -15, width: 0 }}
+              animate={{ opacity: 1, x: 0, width: "auto" }}
+              exit={{ opacity: 0, x: -15, width: 0 }}
+              className="lg:col-span-1 space-y-4 overflow-hidden"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -635,7 +637,11 @@ export const PurchaseInvoiceForm: React.FC<{
 
         {/* Right Side: Active Draft Editor Form */}
         <div
-          className={`col-span-1 lg:col-span-3 ${editInvoiceId ? "lg:col-span-4 max-w-5xl mx-auto w-full" : ""}`}
+          className={`col-span-1 ${
+            editInvoiceId || !sidebarOpen
+              ? "lg:col-span-4 max-w-5xl mx-auto w-full"
+              : "lg:col-span-3"
+          }`}
         >
           {/* Header Action For Single Invoice Edit Mode */}
           {editInvoiceId && (
@@ -656,6 +662,91 @@ export const PurchaseInvoiceForm: React.FC<{
               animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
+              {/* Shorthand / Browser-like tabs row for active invoices queue when simple/spacious mode is active */}
+              {!editInvoiceId && (
+                <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/80 shadow-sm leading-none">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 font-mono mr-2 hidden sm:inline-block">
+                      Daftar Faktur:
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {drafts.map((d) => {
+                        const isActive = d.id === activeDraftId;
+                        const supplier = data.suppliers.find((s) => s.id === d.supplierId);
+                        const totalItems = d.items.length;
+                        return (
+                          <div
+                            key={d.id}
+                            onClick={() => setActiveDraftId(d.id)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none border ${
+                              isActive
+                                ? "bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-500/10"
+                                : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-800"
+                            }`}
+                          >
+                            <span className="font-mono text-[10px] font-black opacity-80">
+                              #{d.invoiceNo.split("-").pop() || d.invoiceNo}
+                            </span>
+                            {supplier && (
+                              <span className="max-w-[90px] truncate text-xs font-bold leading-none">
+                                {supplier.name}
+                              </span>
+                            )}
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded-lg font-mono font-black ${
+                                isActive
+                                  ? "bg-emerald-700/80 text-emerald-50"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                              }`}
+                            >
+                              {totalItems}
+                            </span>
+                            {drafts.length > 1 && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveDraft(d.id, e);
+                                }}
+                                className={`p-0.5 rounded-lg transition-colors cursor-pointer ${
+                                  isActive
+                                    ? "hover:bg-emerald-800 text-emerald-200 hover:text-white"
+                                    : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-rose-500"
+                                }`}
+                                title="Hapus Faktur ini dari antrian"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                      <button
+                        onClick={handleAddNewDraft}
+                        className="p-1.5 rounded-xl bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all cursor-pointer font-bold flex items-center justify-center gap-1.5 shadow-sm text-xs"
+                        title="Tambah Faktur Antrian Baru"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span className="text-[10px] uppercase font-black tracking-wider pr-1 hidden sm:inline">Baru</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right side: detail show/hide toggle */}
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => setSidebarOpen(!sidebarOpen)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition-all border ${
+                        sidebarOpen
+                          ? "bg-amber-100/60 dark:bg-amber-955/20 text-amber-700 dark:text-amber-400 border-amber-250 dark:border-amber-900/30 font-bold"
+                          : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>{sidebarOpen ? "Tutup Panel Samping" : "Detail Antrian"}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
               <Card className="rounded-xl shadow-md border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900">
                 <div className="h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500" />
                 <CardContent className="p-6">
@@ -685,7 +776,7 @@ export const PurchaseInvoiceForm: React.FC<{
                   </div>
 
                   {/* Header Form Fields container */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8 p-5 bg-slate-50/55 dark:bg-slate-950/20 border border-slate-150/80 dark:border-slate-800/80 rounded-2xl">
                     <div>
                       <label className="text-xs font-semibold text-slate-450 dark:text-slate-500 uppercase tracking-wider mb-1.5 block">
                         NO. FAKTUR SUPPLIER
@@ -745,16 +836,15 @@ export const PurchaseInvoiceForm: React.FC<{
                   </div>
 
                   {/* Add Product Segment nested inside active draft */}
-                  <div className="border border-emerald-100/70 dark:border-emerald-950/45 bg-emerald-55/7 dark:bg-emerald-950/5 rounded-xl p-5 mb-8">
-                    <h3 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
-                      <Plus className="w-3.5 h-3.5 text-emerald-600" /> MASUKKAN
-                      BARANG BARU KE ANTRIAN
+                  <div className="border border-emerald-100/70 dark:border-emerald-905/30 bg-emerald-50/5 dark:bg-emerald-950/5 rounded-2xl p-6 mb-8">
+                    <h3 className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                      <Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-450 animate-pulse" /> MASUKKAN BARANG BARU KE DAFTAR FAKTUR
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                      {/* Col 1: Nama Barang */}
-                      <div className="col-span-1 md:col-span-5 space-y-1.5">
-                        <label className="text-[10px] font-bold text-emerald-600/85 dark:text-emerald-450 uppercase tracking-wider block">
+                      {/* Row 1, Col 1: Nama Barang / SKU */}
+                      <div className="col-span-12 md:col-span-8 space-y-1.5">
+                        <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
                           NAMA BARANG / SKU
                         </label>
                         <SearchableSelect
@@ -772,13 +862,37 @@ export const PurchaseInvoiceForm: React.FC<{
                             });
                           }}
                           placeholder="Pilih atau cari komoditas..."
-                          buttonClassName="border-emerald-250/70 dark:border-slate-800 bg-white dark:bg-slate-950 focus-within:ring-emerald-555 text-sm h-11 shadow-sm"
+                          buttonClassName="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-sm h-11 shadow-sm rounded-xl focus:ring-emerald-500"
                         />
                       </div>
 
-                      {/* Col 2: Qty */}
-                      <div className="col-span-1 md:col-span-2 space-y-1.5">
-                        <label className="text-[10px] font-bold text-emerald-600/85 dark:text-emerald-450 uppercase tracking-wider block">
+                      {/* Row 1, Col 2: No. Batch */}
+                      <div className="col-span-12 md:col-span-4 space-y-1.5">
+                        <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
+                          NO. BATCH / LOT (OPTIONAL)
+                        </label>
+                        <Input
+                          placeholder="Contoh: Batch-A or Lot-2"
+                          value={currentItem.batchNo}
+                          onChange={(e) =>
+                            setCurrentItem({
+                              ...currentItem,
+                              batchNo: e.target.value,
+                            })
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleAddItem();
+                            }
+                          }}
+                          className="focus-visible:ring-emerald-500 border-slate-200 dark:border-slate-800 h-11 bg-white dark:bg-slate-950 font-mono rounded-xl px-3"
+                        />
+                      </div>
+
+                      {/* Row 2, Col 1: Qty */}
+                      <div className="col-span-12 sm:col-span-4 md:col-span-3 space-y-1.5">
+                        <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
                           JUMLAH (QTY)
                         </label>
                         <Input
@@ -800,14 +914,14 @@ export const PurchaseInvoiceForm: React.FC<{
                               handleAddItem();
                             }
                           }}
-                          placeholder="Qty"
-                          className="text-center focus-visible:ring-emerald-500 border-emerald-250/70 dark:border-slate-800 h-11 bg-white dark:bg-slate-950 font-bold"
+                          placeholder="0"
+                          className="text-center focus-visible:ring-emerald-500 border-slate-200 dark:border-slate-800 h-11 bg-white dark:bg-slate-950 font-bold rounded-xl"
                         />
                       </div>
 
-                      {/* Col 3: Satuan */}
-                      <div className="col-span-1 md:col-span-2 space-y-1.5">
-                        <label className="text-[10px] font-bold text-emerald-600/85 dark:text-emerald-450 uppercase tracking-wider block">
+                      {/* Row 2, Col 2: Satuan */}
+                      <div className="col-span-12 sm:col-span-4 md:col-span-3 space-y-1.5">
+                        <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
                           SATUAN
                         </label>
                         <select
@@ -822,7 +936,7 @@ export const PurchaseInvoiceForm: React.FC<{
                               selectedUnitId: e.target.value,
                             })
                           }
-                          className="flex h-11 w-full rounded-md border border-emerald-250/70 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-800 dark:bg-slate-950 disabled:opacity-50 disabled:bg-slate-100 font-semibold text-slate-800 dark:text-slate-100"
+                          className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-800 dark:bg-slate-950 disabled:opacity-50 disabled:bg-slate-100 font-bold text-slate-800 dark:text-slate-100 cursor-pointer"
                         >
                           {!currentItem.item ? (
                             <option value="">Pilih barang...</option>
@@ -844,33 +958,9 @@ export const PurchaseInvoiceForm: React.FC<{
                         </select>
                       </div>
 
-                      {/* Col 4: No. Batch */}
-                      <div className="col-span-1 md:col-span-3 space-y-1.5">
-                        <label className="text-[10px] font-bold text-emerald-600/85 dark:text-emerald-450 uppercase tracking-wider block">
-                          NO. BATCH
-                        </label>
-                        <Input
-                          placeholder="Batch / No. Lot"
-                          value={currentItem.batchNo}
-                          onChange={(e) =>
-                            setCurrentItem({
-                              ...currentItem,
-                              batchNo: e.target.value,
-                            })
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleAddItem();
-                            }
-                          }}
-                          className="focus-visible:ring-emerald-500 border-emerald-250/70 dark:border-slate-800 h-11 bg-white dark:bg-slate-950 font-mono"
-                        />
-                      </div>
-
-                      {/* Col 5: Exp Date */}
-                      <div className="col-span-1 md:col-span-3 space-y-1.5">
-                        <label className="text-[10px] font-bold text-emerald-600/85 dark:text-emerald-450 uppercase tracking-wider block">
+                      {/* Row 2, Col 3: Exp Date */}
+                      <div className="col-span-12 sm:col-span-4 md:col-span-3 space-y-1.5">
+                        <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
                           TANGGAL KADALUARSA
                         </label>
                         <Input
@@ -888,19 +978,21 @@ export const PurchaseInvoiceForm: React.FC<{
                               handleAddItem();
                             }
                           }}
-                          className="text-sm focus-visible:ring-emerald-500 border-emerald-250/70 dark:border-slate-800 text-slate-500 min-w-0 h-11 bg-white dark:bg-slate-950"
+                          className="text-sm focus-visible:ring-emerald-500 border-slate-200 dark:border-slate-800 text-slate-500 min-w-0 h-11 bg-white dark:bg-slate-950 rounded-xl"
                         />
                       </div>
 
-                      {/* Col 6: Add Button */}
-                      <div className="col-span-1 md:col-span-12 flex justify-end">
+                      {/* Row 2, Col 4: Add Button perfectly aligned */}
+                      <div className="col-span-12 sm:col-span-4 md:col-span-3 space-y-1.5 flex flex-col justify-end">
+                        <span className="hidden md:block text-[10px] text-transparent select-none">
+                          ADD ACTION
+                        </span>
                         <Button
                           onClick={handleAddItem}
                           disabled={!currentItem.item}
-                          className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 px-8 rounded-lg shadow-md hover:shadow-emerald-500/10 flex items-center justify-center gap-1.5 select-none transition-all"
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold h-11 rounded-xl shadow-md hover:shadow-emerald-500/15 flex items-center justify-center gap-1.5 select-none transition-all cursor-pointer text-xs uppercase tracking-wider"
                         >
-                          <Plus className="w-4 h-4" /> Masukkan ke Daftar Faktur
-                          (Enter)
+                          <Plus className="w-4 h-4" /> Tambah Barang
                         </Button>
                       </div>
                     </div>
@@ -1004,17 +1096,17 @@ export const PurchaseInvoiceForm: React.FC<{
                                   Batch: {item.batchNo}
                                 </span>
                               ) : (
-                                <span className="text-slate-400 italic text-xs">
-                                  No Batch Empty
+                                <span className="text-slate-450 dark:text-slate-500 italic text-[11px] font-mono select-none">
+                                  Tanpa Batch
                                 </span>
                               )}
                               {item.expDate ? (
-                                <span className="text-xs bg-rose-55 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-950/30 text-rose-600 dark:text-rose-450 px-2.5 py-1 rounded-md font-bold">
+                                <span className="text-xs bg-rose-55 dark:bg-rose-950/20 border border-rose-101 dark:border-rose-950/30 text-rose-600 dark:text-rose-450 px-2.5 py-1 rounded-md font-bold">
                                   Exp: {item.expDate}
                                 </span>
                               ) : (
-                                <span className="text-slate-400 italic text-xs">
-                                  No Exp Empty
+                                <span className="text-slate-450 dark:text-slate-500 italic text-[11px] select-none">
+                                  Tanpa Kadaluarsa
                                 </span>
                               )}
                             </div>
@@ -1043,6 +1135,31 @@ export const PurchaseInvoiceForm: React.FC<{
                       real-time.
                     </p>
                   </div>
+
+                  {/* Footer Action Area for instant commit when in simple view */}
+                  {!editInvoiceId && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 mt-8 border-t border-slate-100 dark:border-slate-800/80">
+                      <div className="text-xs text-slate-400 dark:text-slate-500 font-bold font-mono uppercase tracking-wider">
+                        STATUS: {drafts.filter((d) => d.items.length > 0).length} DARI {drafts.length} FAKTUR TERISI
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        <Button
+                          onClick={handleAddNewDraft}
+                          variant="outline"
+                          className="w-full sm:w-auto border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-500 font-bold h-11 px-5 rounded-xl text-xs uppercase cursor-pointer"
+                        >
+                          <Plus className="w-4 h-4 mr-1.5" /> Tambah Draft Lain
+                        </Button>
+                        <Button
+                          onClick={handleSaveAll}
+                          disabled={drafts.filter((d) => d.items.length > 0).length === 0}
+                          className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-black h-11 px-7 rounded-xl shadow-md hover:shadow-emerald-500/20 flex items-center justify-center gap-1.5 cursor-pointer text-xs uppercase tracking-wider"
+                        >
+                          <CheckCircle2 className="w-4 h-4" /> Proses & Simpan Antrian ({drafts.filter((d) => d.items.length > 0).length})
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>

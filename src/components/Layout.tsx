@@ -36,6 +36,51 @@ export const Layout: React.FC<{
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [lowStockCollapsed, setLowStockCollapsed] = useState(false);
+  const [selectedNotifTab, setSelectedNotifTab] = useState<"semua" | "stok" | "expired" | "arus">("semua");
+  const [activeDetail, setActiveDetail] = useState<{
+    type: "low" | "exp" | "tx";
+    id: string;
+    item?: any;
+    tx?: any;
+    batch?: any;
+  } | null>(null);
+
+  const rupiah = (val?: number) => {
+    if (val === undefined || val === null) return "Rp 0";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(val);
+  };
+
+  const handleOpenDetail = (type: "low" | "exp" | "tx", originalData: any) => {
+    if (type === "low") {
+      setActiveDetail({
+        type: "low",
+        id: originalData.id,
+        item: originalData,
+      });
+    } else if (type === "exp") {
+      const itemIdClean = originalData.id.split("-")[0];
+      const mainItem = data.items.find((i) => i.id === itemIdClean);
+      setActiveDetail({
+        type: "exp",
+        id: originalData.id,
+        item: mainItem || { name: originalData.name },
+        batch: originalData,
+      });
+    } else if (type === "tx") {
+      const txItem = data.items.find((i) => i.id === originalData.itemId);
+      setActiveDetail({
+        type: "tx",
+        id: originalData.id,
+        tx: originalData,
+        item: txItem,
+      });
+    }
+  };
 
   // Notifications computing
   const lowStockItems = data.items.filter(
@@ -173,11 +218,80 @@ export const Layout: React.FC<{
   });
 
   const recentTxs = [...data.transactions]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5);
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const totalNotifs =
     lowStockItems.length + expiringItems.length + recentTxs.length;
+
+  const allNotificationsList = React.useMemo(() => {
+    const list: {
+      id: string;
+      type: "low" | "exp" | "tx";
+      title: string;
+      subtitle: string;
+      timeLabel: string;
+      dateForSort: Date;
+      originalData: any;
+      severity: "danger" | "warning" | "info";
+    }[] = [];
+
+    // 1. Transactions - sorted chronologically
+    recentTxs.forEach((tx) => {
+      const item = data.items.find((i) => i.id === tx.itemId);
+      const isOut = tx.type === "OUT";
+      list.push({
+        id: `tx-${tx.id}`,
+        type: "tx",
+        title: isOut ? "Arus Keluar (POS)" : "Arus Masuk (Inbound)",
+        subtitle: `${isOut ? "-" : "+"} ${tx.qty} ${item?.name || "Produk"}`,
+        timeLabel: new Date(tx.date).toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        dateForSort: new Date(tx.date),
+        originalData: tx,
+        severity: "info",
+      });
+    });
+
+    // 2. Low stock items - standing alerts. To put these standing alerts of high urgency at the top, we assign them a high-priority "virtual" timestamp!
+    lowStockItems.forEach((item) => {
+      const isOut = item.stock <= 0;
+      list.push({
+        id: `low-${item.id}`,
+        type: "low",
+        title: `Stok Menipis: ${item.name}`,
+        subtitle: `Stok: ${item.stock} ${data.units.find(u => u.id === item.unitId)?.name || ""}. Min: ${item.minStock !== undefined ? item.minStock : 5}`,
+        timeLabel: "Pemberitahuan Aktif",
+        // Position them highly on top of transactions (using current+Future offset so they are on top)
+        dateForSort: new Date(Date.now() + 1000 * 60 * 60 * 24 * (isOut ? 10 : 5)),
+        originalData: item,
+        severity: isOut ? "danger" : "warning",
+      });
+    });
+
+    // 3. Expiring items - alerts. We put them highly on top too!
+    expiringItems.forEach((item) => {
+      const expTime = new Date(item.expiryDate).getTime();
+      const daysLeft = Math.ceil((expTime - Date.now()) / (1000 * 60 * 60 * 24));
+      list.push({
+        id: `exp-${item.id}`,
+        type: "exp",
+        title: `Dekat Expired: ${item.name}`,
+        subtitle: `Batch: ${item.batchNumber || "Utama"} • Exp: ${item.expiryDate} (${daysLeft} Hari Lagi)`,
+        timeLabel: `${daysLeft} Hari Lagi`,
+        // Prioritize sooner expiration dates to be on top!
+        dateForSort: new Date(Date.now() + 1000 * 60 * 60 * 24 * (30 - daysLeft)),
+        originalData: item,
+        severity: daysLeft <= 7 ? "danger" : "warning",
+      });
+    });
+
+    // Sort by whichever has the newest/most critical sort timestamp, placing ALL matching recent notifications & critical alerts at the very top!
+    return list.sort((a, b) => b.dateForSort.getTime() - a.dateForSort.getTime());
+  }, [lowStockItems, expiringItems, recentTxs, data]);
 
   const menus = [
     {
@@ -689,60 +803,145 @@ export const Layout: React.FC<{
                 >
                   <X className="w-5 h-5" />
                 </button>
-              </div>
-
-              {/* Filtering / Summary Grid */}
-              <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-slate-800 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 py-3 shrink-0">
-                <div>
-                  <div className="font-bold text-rose-600 dark:text-rose-400 text-sm animate-pulse">
-                    {lowStockItems.length}
-                  </div>
-                  <div className="font-semibold text-slate-600 dark:text-slate-300">Stok Menipis</div>
-                </div>
-                <div>
-                  <div className="font-bold text-orange-500 dark:text-orange-400 text-sm">
-                    {expiringItems.length}
-                  </div>
-                  <div className="font-semibold text-slate-600 dark:text-slate-300">Hampir Expired</div>
-                </div>
-                <div>
-                  <div className="font-bold text-indigo-600 dark:text-indigo-400 text-sm">
-                    {recentTxs.length}
-                  </div>
-                  <div className="font-semibold text-slate-600 dark:text-slate-300">Arus Baru</div>
-                </div>
+              </div>              {/* Filtering / Summary Tabs */}
+              <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 shrink-0 text-center text-xs font-bold leading-none select-none">
+                <button
+                  type="button"
+                  onClick={() => setSelectedNotifTab("semua")}
+                  className={`flex-1 py-3 text-[11px] font-bold border-b-2 transition-colors ${
+                    selectedNotifTab === "semua"
+                      ? "border-rose-600 text-rose-600 dark:text-rose-400 dark:border-rose-500"
+                      : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  Semua ({totalNotifs})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedNotifTab("stok")}
+                  className={`flex-1 py-3 text-[11px] font-bold border-b-2 transition-colors ${
+                    selectedNotifTab === "stok"
+                      ? "border-rose-600 text-rose-600 dark:text-rose-400 dark:border-rose-500"
+                      : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  Stok ({lowStockItems.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedNotifTab("expired")}
+                  className={`flex-1 py-3 text-[11px] font-bold border-b-2 transition-colors ${
+                    selectedNotifTab === "expired"
+                      ? "border-rose-600 text-rose-600 dark:text-rose-400 dark:border-rose-500"
+                      : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  Expired ({expiringItems.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedNotifTab("arus")}
+                  className={`flex-1 py-3 text-[11px] font-bold border-b-2 transition-colors ${
+                    selectedNotifTab === "arus"
+                      ? "border-rose-600 text-rose-600 dark:text-rose-400 dark:border-rose-500"
+                      : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  Arus Baru ({recentTxs.length})
+                </button>
               </div>
 
               {/* List Content */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30 dark:bg-slate-950/20 custom-scrollbar">
-                {/* Low Stock Items Section */}
-                {lowStockItems.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center bg-rose-50/25 dark:bg-rose-950/10 p-1.5 rounded-lg border border-rose-200/40 dark:border-rose-900/40 mb-3 select-none">
-                      <button 
-                        type="button"
-                        onClick={() => setLowStockCollapsed(!lowStockCollapsed)}
-                        className="flex items-center gap-1.5 cursor-pointer hover:opacity-85 transition-opacity text-left bg-transparent border-none p-1 shrink hover:bg-rose-50/50 dark:hover:bg-rose-950/20 rounded-md focus:outline-none"
-                        title={lowStockCollapsed ? "Tampilkan Stok Menipis" : "Sembunyikan Stok Menipis"}
-                      >
-                        {lowStockCollapsed ? (
-                          <ChevronDown className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
-                        ) : (
-                          <ChevronUp className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
-                        )}
-                        <span className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1.5 font-mono">
-                          <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600"></span>
-                          </span>
-                          Stok Menipis ({lowStockItems.length})
-                        </span>
-                      </button>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/30 dark:bg-slate-950/20 custom-scrollbar">
+                
+                {/* 1. SEMUA TAB (Combined Chrono Feed, newest/most critical alerts at the top) */}
+                {selectedNotifTab === "semua" && (
+                  <>
+                    {allNotificationsList.length > 0 ? (
+                      <div className="space-y-3">
+                        {allNotificationsList.map((notif) => {
+                          const isLow = notif.type === "low";
+                          const isExp = notif.type === "exp";
+                          const isTx = notif.type === "tx";
+
+                          // Determine beautiful colors based on severity / type
+                          let bgClass = "bg-blue-50/50 dark:bg-blue-950/15 border-blue-100 dark:border-blue-900/20 hover:border-blue-300";
+                          let iconBg = "bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400";
+                          let IconComponent = ArrowRightLeft;
+
+                          if (notif.severity === "danger") {
+                            bgClass = "bg-red-500/5 dark:bg-red-950/15 border-red-200/60 dark:border-red-900/30 hover:border-red-350";
+                            iconBg = "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-405";
+                          } else if (notif.severity === "warning") {
+                            bgClass = "bg-orange-500/5 dark:bg-amber-950/15 border-orange-200/60 dark:border-amber-900/30 hover:border-orange-355";
+                            iconBg = "bg-orange-100 text-orange-600 dark:bg-amber-950 dark:text-orange-405";
+                          }
+
+                          if (isLow) {
+                            IconComponent = AlertTriangle;
+                          } else if (isExp) {
+                            IconComponent = Calendar;
+                          } else if (isTx) {
+                            const tx = notif.originalData;
+                            IconComponent = tx.type === "OUT" ? PackageMinus : PackagePlus;
+                            if (tx.type === "OUT") {
+                              bgClass = "bg-indigo-500/5 dark:bg-indigo-950/15 border-indigo-200/60 dark:border-indigo-900/30 hover:border-indigo-350";
+                              iconBg = "bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400";
+                            } else {
+                              bgClass = "bg-emerald-500/5 dark:bg-emerald-950/15 border-emerald-200/60 dark:border-emerald-900/30 hover:border-emerald-350";
+                              iconBg = "bg-emerald-100 text-emerald-600 dark:bg-emerald-955 dark:text-emerald-400";
+                            }
+                          }
+
+                          return (
+                            <div
+                              key={notif.id}
+                              onClick={() => handleOpenDetail(notif.type, notif.originalData)}
+                              className={`p-3 rounded-xl border text-xs flex gap-3 shadow-xs hover:shadow transition-all duration-200 cursor-pointer active:scale-[0.99] select-none ${bgClass}`}
+                            >
+                              <div className={`p-2 rounded-lg self-start shrink-0 ${iconBg}`}>
+                                <IconComponent className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex justify-between items-start gap-2">
+                                  <span className="font-bold text-slate-800 dark:text-stone-200 block truncate text-[11px] sm:text-xs">
+                                    {notif.title}
+                                  </span>
+                                  <span className="text-[8px] font-black uppercase font-mono px-1 py-0.5 rounded bg-slate-500/10 text-slate-500 dark:text-slate-400 whitespace-nowrap font-bold">
+                                    {notif.type === "low" ? "STOK" : notif.type === "exp" ? "EXP" : "ARUS"}
+                                  </span>
+                                </div>
+                                <p className="text-slate-500 dark:text-slate-450 mt-1 text-[10px] truncate leading-tight">
+                                  {notif.subtitle}
+                                </p>
+                                <span className="text-[9px] text-slate-400 dark:text-slate-550 font-medium font-mono block mt-1.5">
+                                  {notif.timeLabel}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs font-semibold">
+                        Tidak ada notifikasi aktif.
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* 2. STOK TAB */}
+                {selectedNotifTab === "stok" && (
+                  <>
+                    <div className="flex justify-between items-center bg-rose-50/25 dark:bg-rose-950/10 p-1.5 rounded-lg border border-rose-200/40 dark:border-rose-900/40 mb-2 select-none shrink-0 text-left">
+                      <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wilder font-mono px-2">
+                        Stok Menipis ({lowStockItems.length})
+                      </span>
                       <div className="flex gap-1 shrink-0">
                         <Button
                           onClick={exportLowStockExcel}
                           size="sm"
-                          className="px-2 py-0.5 text-[10px] h-6 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs border border-emerald-750"
+                          className="px-2 py-0.5 text-[9px] h-6 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs border border-emerald-750"
                         >
                           <FileSpreadsheet className="w-3 h-3 mr-1 shrink-0" />
                           Excel
@@ -750,39 +949,40 @@ export const Layout: React.FC<{
                         <Button
                           onClick={exportLowStockPDF}
                           size="sm"
-                          className="px-2 py-0.5 text-[10px] h-6 bg-rose-600 hover:bg-rose-700 text-white shadow-xs border border-rose-750"
+                          className="px-2 py-0.5 text-[9px] h-6 bg-rose-600 hover:bg-rose-700 text-white shadow-xs border border-rose-750"
                         >
                           <FileText className="w-3 h-3 mr-1 shrink-0" />
                           PDF
                         </Button>
                       </div>
                     </div>
-                    
-                    {!lowStockCollapsed && (
-                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
+
+                    {lowStockItems.length > 0 ? (
+                      <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
                         {lowStockItems.map((item) => {
                           const isOut = item.stock <= 0;
                           return (
                             <div
                               key={`low-${item.id}`}
-                              className={`p-3 rounded-xl border text-xs flex gap-3 shadow-xs transition-colors ${
+                              onClick={() => handleOpenDetail("low", item)}
+                              className={`p-3 rounded-xl border text-xs flex gap-3 shadow-xs hover:shadow cursor-pointer transition-all duration-200 active:scale-[0.99] select-none ${
                                 isOut 
                                   ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40 hover:border-red-300"
                                   : "bg-rose-500/5 dark:bg-rose-950/10 border-rose-200/50 dark:border-rose-900/30 hover:border-rose-300"
                               }`}
                             >
-                              <div className={`p-2 rounded-lg self-start ${isOut ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'}`}>
-                                <AlertTriangle className="w-4 h-4 shrink-0 animate-pulse" />
+                              <div className={`p-2 rounded-lg self-start shrink-0 ${isOut ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400'}`}>
+                                <AlertTriangle className="w-4 h-4" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <span className="font-bold text-slate-800 dark:text-stone-200 block truncate text-[11px]">
+                                <span className="font-bold text-slate-800 dark:text-stone-200 block truncate text-[11px] sm:text-xs">
                                   {item.name}
                                 </span>
                                 <p className="text-slate-500 dark:text-slate-450 mt-0.5 text-[10px] font-mono leading-tight truncate">
                                   SKU: {item.sku || '-'} • Sup: {getSupplierName(item.supplierId)}
                                 </p>
                                 <div className="flex items-center gap-2 mt-1.5">
-                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold font-mono ${isOut ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-405' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-405'}`}>
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold font-mono ${isOut ? 'bg-red-105 text-red-700' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400'}`}>
                                     Stok: {item.stock} {data.units.find((u) => u.id === item.unitId)?.name || ""}
                                   </span>
                                   <span className="text-[10px] text-slate-400 dark:text-slate-500">
@@ -794,109 +994,115 @@ export const Layout: React.FC<{
                           );
                         })}
                       </div>
+                    ) : (
+                      <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs">
+                        Tidak ada stok barang yang menipis.
+                      </div>
                     )}
-                  </div>
+                  </>
                 )}
 
-                {/* Expiring Items Section */}
-                {expiringItems.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5 font-mono">
-                      <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                      Masa Expired Dekat ({expiringItems.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {expiringItems.map((item) => (
-                        <div
-                          key={`exp-${item.id}`}
-                          className="p-3 bg-orange-500/5 dark:bg-amber-950/25 rounded-xl border border-orange-200/50 dark:border-amber-900/40 text-xs flex gap-3 shadow-xs hover:border-orange-300 dark:hover:border-amber-800 transition-colors"
-                        >
-                          <div className="p-2 bg-orange-100 dark:bg-amber-900/50 text-orange-600 dark:text-orange-400 rounded-lg self-start">
-                            <Calendar className="w-4 h-4" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="font-bold text-slate-800 dark:text-stone-200 block truncate">
-                              {item.name}
-                            </span>
-                            <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-[10px]">
-                              {item.batchNumber
-                                ? `Batch: ${item.batchNumber}`
-                                : "Batch Utama"}
-                            </p>
-                            <span className="text-orange-600 dark:text-orange-400 block mt-1 font-bold">
-                              Exp: {item.expiryDate}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Recent Activities */}
-                {recentTxs.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5 font-mono">
-                      <History className="w-3.5 h-3.5 text-indigo-500" />
-                      Arus Barang Terbaru
-                    </h4>
-                    <div className="space-y-2">
-                      {recentTxs.map((tx) => {
-                        const item = data.items.find((i) => i.id === tx.itemId);
-                        const isOut = tx.type === "OUT";
-                        return (
-                          <div
-                            key={`tx-${tx.id}`}
-                            className={`p-3 rounded-xl border text-xs flex gap-3 shadow-xs hover:shadow transition-shadow ${
-                              isOut
-                                ? "bg-indigo-505/5 dark:bg-indigo-950/20 border-indigo-200/50 dark:border-indigo-900/30"
-                                : "bg-emerald-505/5 dark:bg-emerald-950/20 border-emerald-200/50 dark:border-emerald-900/30"
-                            }`}
-                          >
+                {/* 3. EXPIRED TAB */}
+                {selectedNotifTab === "expired" && (
+                  <>
+                    {expiringItems.length > 0 ? (
+                      <div className="space-y-2 max-h-[65vh] overflow-y-auto pr-1 custom-scrollbar">
+                        {expiringItems.map((item) => {
+                          const expTime = new Date(item.expiryDate).getTime();
+                          const daysLeft = Math.ceil((expTime - Date.now()) / (1000 * 60 * 60 * 24));
+                          return (
                             <div
-                              className={`p-2 rounded-lg self-start ${
+                              key={`exp-${item.id}`}
+                              onClick={() => handleOpenDetail("exp", item)}
+                              className="p-3 bg-orange-500/5 dark:bg-amber-950/25 rounded-xl border border-orange-200/50 dark:border-amber-900/40 text-xs flex gap-3 shadow-xs hover:border-orange-350 hover:shadow cursor-pointer transition-all duration-200 active:scale-[0.99] select-none"
+                            >
+                              <div className="p-2 bg-orange-100 dark:bg-amber-900/50 text-orange-600 dark:text-orange-400 rounded-lg self-start shrink-0">
+                                <Calendar className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <span className="font-bold text-slate-800 dark:text-stone-200 block truncate text-[11px] sm:text-xs">
+                                  {item.name}
+                                </span>
+                                <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-[10px] font-mono leading-tight">
+                                  {item.batchNumber ? `Batch: ${item.batchNumber}` : "Batch Utama"}
+                                </p>
+                                <span className="text-orange-650 dark:text-orange-400 block mt-1.5 font-bold font-mono text-[10px]">
+                                  Exp: {item.expiryDate} ({daysLeft} Hari Lagi)
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs">
+                        Tidak ada barang mendekati batas kadaluarsa.
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* 4. ARUS BARU TAB */}
+                {selectedNotifTab === "arus" && (
+                  <>
+                    {recentTxs.length > 0 ? (
+                      <div className="space-y-2 max-h-[65vh] overflow-y-auto pr-1 custom-scrollbar">
+                        {recentTxs.map((tx) => {
+                          const item = data.items.find((i) => i.id === tx.itemId);
+                          const isOut = tx.type === "OUT";
+                          return (
+                            <div
+                              key={`tx-${tx.id}`}
+                              onClick={() => handleOpenDetail("tx", tx)}
+                              className={`p-3 rounded-xl border text-xs flex gap-3 shadow-xs hover:shadow cursor-pointer transition-all duration-200 active:scale-[0.99] select-none ${
                                 isOut
-                                  ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"
-                                  : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
+                                  ? "bg-indigo-505/5 dark:bg-indigo-950/15 border-indigo-200/50 dark:border-indigo-900/30 hover:border-indigo-300"
+                                  : "bg-emerald-505/5 dark:bg-emerald-950/15 border-emerald-200/50 dark:border-emerald-900/30 hover:border-emerald-300"
                               }`}
                             >
-                              {isOut ? (
-                                <PackageMinus className="w-4 h-4" />
-                              ) : (
-                                <PackagePlus className="w-4 h-4" />
-                              )}
+                              <div
+                                className={`p-2 rounded-lg self-start shrink-0 ${
+                                  isOut
+                                    ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400"
+                                    : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
+                                }`}
+                              >
+                                {isOut ? <PackageMinus className="w-4 h-4" /> : <PackagePlus className="w-4 h-4" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <span className="font-bold text-slate-700 dark:text-stone-300 block truncate text-[11px] sm:text-xs font-mono">
+                                  {isOut ? "Barang Keluar (POS)" : "Barang Masuk (Inbound)"}
+                                </span>
+                                <span className="text-slate-655 dark:text-slate-400 block text-[11px] mt-0.5 font-medium leading-tight">
+                                  {isOut ? "-" : "+"} {tx.qty} {item?.name || "Produk Hilang"}
+                                </span>
+                                <span className="text-[9px] text-slate-400 dark:text-slate-500 block mt-1.5 font-mono">
+                                  {new Date(tx.date).toLocaleString("id-ID", {
+                                    dateStyle: "short",
+                                    timeStyle: "short",
+                                  })}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <span className="font-bold text-slate-700 dark:text-stone-300 block truncate">
-                                {isOut
-                                  ? "Barang Keluar (POS)"
-                                  : "Barang Masuk (Inbound)"}
-                              </span>
-                              <span className="text-slate-600 dark:text-slate-400 block text-[11px] mt-0.5 font-medium">
-                                {isOut ? "-" : "+"} {tx.qty} {item?.name}
-                              </span>
-                              <span className="text-[10px] text-slate-400 block mt-1">
-                                {new Date(tx.date).toLocaleString("id-ID", {
-                                  dateStyle: "short",
-                                  timeStyle: "short",
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs">
+                        Tidak ada transaksi tersimpan.
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {totalNotifs === 0 && (
                   <div className="py-16 text-center text-slate-400 dark:text-slate-500 text-sm flex flex-col items-center justify-center">
                     <Bell className="w-12 h-12 mb-3 text-slate-300 dark:text-slate-700 animate-bounce" />
                     <p className="font-semibold text-slate-700 dark:text-slate-300">
-                      Aman Terkendali!
+                      Semua Aman Terkendali!
                     </p>
                     <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                      Sistem prima, semua stok aman.
+                      Sistem prima, tidak ada peringatan aktif.
                     </p>
                   </div>
                 )}
@@ -909,6 +1115,254 @@ export const Layout: React.FC<{
                   onClick={() => setShowNotifications(false)}
                 >
                   Tutup Panel
+                </Button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Detail Overlay Dialog Modal */}
+      <AnimatePresence>
+        {activeDetail && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setActiveDetail(null)}
+              className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[100] transition-all"
+            />
+
+            {/* Modal Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed inset-x-4 top-[10%] max-w-lg mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl z-[101] overflow-hidden flex flex-col focus:outline-none"
+            >
+              {/* Header */}
+              <div className="p-5 border-b border-slate-100 dark:border-slate-800/60 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/30">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-2xl ${
+                    activeDetail.type === "low" 
+                      ? "bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400"
+                      : activeDetail.type === "exp"
+                      ? "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400"
+                      : "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400"
+                  }`}>
+                    {activeDetail.type === "low" && <AlertTriangle className="w-5 h-5 animate-pulse" />}
+                    {activeDetail.type === "exp" && <Calendar className="w-5 h-5" />}
+                    {activeDetail.type === "tx" && <ArrowRightLeft className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 block mb-0.5 font-mono">
+                      {activeDetail.type === "low" && "DETAIL PERINGATAN STOK"}
+                      {activeDetail.type === "exp" && "DETAIL BATAS KADALUARSA"}
+                      {activeDetail.type === "tx" && "DETAIL AKTIVITAS ARUS"}
+                    </span>
+                    <h4 className="font-extrabold text-sm sm:text-base text-slate-800 dark:text-stone-100">
+                      {activeDetail.type === "low" && "Stok Barang Menipis"}
+                      {activeDetail.type === "exp" && "Pemberitahuan Kadaluarsa"}
+                      {activeDetail.type === "tx" && (activeDetail.tx?.type === "OUT" ? "Barang Keluar (POS)" : "Barang Masuk (Inbound)")}
+                    </h4>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveDetail(null)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-105 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body Content */}
+              <div className="p-6 overflow-y-auto max-h-[60vh] space-y-5 text-sm leading-relaxed text-slate-600 dark:text-slate-300 custom-scrollbar">
+                
+                {/* 1. Low Stock Content */}
+                {activeDetail.type === "low" && activeDetail.item && (
+                  <div className="space-y-4">
+                    <div className="bg-rose-500/5 border border-rose-200/50 dark:border-rose-955/40 p-4 rounded-2xl flex flex-col gap-1">
+                      <span className="text-[10px] text-rose-500 dark:text-rose-400 uppercase tracking-wilder font-extrabold font-mono">Nama Produk</span>
+                      <h3 className="text-base sm:text-lg font-black text-slate-800 dark:text-stone-100 leading-snug">{activeDetail.item.name}</h3>
+                      <p className="text-xs text-slate-400 mt-0.5 font-mono">SKU: {activeDetail.item.sku || "-"}</p>
+                    </div>
+
+                    {/* Stock Alert Visualizer Progress */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs font-bold font-mono">
+                        <span className="text-slate-400">STATUS LEVEL STOK</span>
+                        <span className={activeDetail.item.stock <= 0 ? "text-rose-600 dark:text-rose-450 animate-pulse" : "text-amber-600 dark:text-amber-450"}>
+                          {activeDetail.item.stock <= 0 ? "HABIS TOTAL" : "MENIPIS/KRITIS"}
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 h-3.5 rounded-full overflow-hidden relative">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${activeDetail.item.stock <= 0 ? "bg-red-600" : "bg-amber-500 animate-pulse"}`} 
+                          style={{ width: `${Math.max(4, Math.min(100, (activeDetail.item.stock / (activeDetail.item.minStock || 5)) * 100))}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[11px] font-mono text-slate-400">
+                        <span>Min Stok: {activeDetail.item.minStock !== undefined ? activeDetail.item.minStock : 5}</span>
+                        <span className="font-extrabold text-slate-700 dark:text-stone-300">Stok Sekarang: {activeDetail.item.stock} {data.units.find(u => u.id === activeDetail.item.unitId)?.name || ""}</span>
+                      </div>
+                    </div>
+
+                    {/* Detail Grid */}
+                    <div className="grid grid-cols-2 gap-4 border-t border-slate-150 dark:border-slate-800/80 pt-4 text-xs font-medium">
+                      <div className="space-y-1">
+                        <span className="text-slate-400 block font-mono font-bold">KATEGORI PRODUK</span>
+                        <span className="text-slate-705 dark:text-stone-200 text-sm font-bold">
+                          {data.categories.find(c => c.id === activeDetail.item.categoryId)?.name || "Kategori Umum"}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-slate-400 block font-mono font-bold">ESTIMASI SELLING PRICE</span>
+                        <span className="text-slate-705 dark:text-stone-200 text-sm font-bold font-mono text-indigo-600 dark:text-indigo-400">
+                          {rupiah(activeDetail.item.sellingPrice)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Supplier Box */}
+                    <div className="border border-slate-100 dark:border-slate-800/50 p-4 rounded-2xl bg-slate-50/40 dark:bg-slate-900/40 space-y-2 mt-4">
+                      <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Supplier Utama Informasi</h5>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-slate-800 dark:text-stone-200 text-sm">
+                          {getSupplierName(activeDetail.item.supplierId)}
+                        </span>
+                        {activeDetail.item.supplierId && (
+                          <span className="text-slate-500 font-mono text-[10px]">
+                            {data.suppliers.find(s => s.id === activeDetail.item.supplierId)?.contact || "No Kontak"}
+                          </span>
+                        )}
+                      </div>
+                      {activeDetail.item.altSupplierId && (
+                        <div className="pt-2 border-t border-dashed border-slate-250 dark:border-slate-800 text-[11px] text-slate-450">
+                          Supplier Cadangan: <strong className="text-slate-700 dark:text-stone-300">{getSupplierName(activeDetail.item.altSupplierId)}</strong>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Expiring Content */}
+                {activeDetail.type === "exp" && activeDetail.batch && (
+                  <div className="space-y-4">
+                    <div className="bg-amber-500/5 border border-amber-200/50 dark:border-amber-955/40 p-4 rounded-2xl flex flex-col gap-1">
+                      <span className="text-[10px] text-amber-500 dark:text-amber-400 uppercase tracking-wilder font-extrabold font-mono font-bold">Nama Produk</span>
+                      <h3 className="text-base sm:text-lg font-black text-slate-800 dark:text-stone-100 leading-snug">{activeDetail.item.name}</h3>
+                      <p className="text-xs text-slate-400 mt-0.5 font-mono">SKU: {activeDetail.item.sku || "-"}</p>
+                    </div>
+
+                    <div className="p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/40 dark:border-rose-900/20 rounded-2xl flex items-center gap-3">
+                      <div className="p-2.5 bg-rose-500 text-white rounded-xl">
+                        <Calendar className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[11px] uppercase tracking-wide text-rose-500 dark:text-rose-450 font-black block font-mono font-bold">Tanggal Kadaluarsa</span>
+                        <span className="text-base font-bold text-rose-700 dark:text-rose-300 font-mono block">
+                          {activeDetail.batch.expiryDate}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Detail Grid */}
+                    <div className="grid grid-cols-2 gap-4 border-t border-slate-150 dark:border-slate-800/80 pt-4 text-xs font-semibold">
+                      <div className="space-y-1">
+                        <span className="text-slate-400 block font-mono font-bold">NOMOR BATCH</span>
+                        <span className="text-slate-700 dark:text-stone-200 text-sm font-bold font-mono">
+                          {activeDetail.batch.batchNumber || "Batch Utama"}
+                        </span>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-slate-400 block font-mono font-bold">KATEGORI PRODUK</span>
+                        <span className="text-slate-700 dark:text-stone-200 text-sm font-bold">
+                          {data.categories.find(c => c.id === activeDetail.item.categoryId)?.name || "Kategori Umum"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Transaction Content */}
+                {activeDetail.type === "tx" && activeDetail.tx && (
+                  <div className="space-y-4">
+                    {/* Transaction header banner */}
+                    <div className={`p-4 rounded-2xl border flex flex-col gap-1 ${
+                      activeDetail.tx.type === "OUT"
+                        ? "bg-indigo-500/5 border-indigo-200 dark:border-indigo-955/40"
+                        : "bg-emerald-500/5 border-emerald-200 dark:border-emerald-955/40"
+                    }`}>
+                      <div className="flex gap-2 items-center">
+                        <span className={`px-2 py-0.5 text-[9px] font-black rounded font-mono font-bold ${
+                          activeDetail.tx.type === "OUT"
+                            ? "bg-indigo-100 text-indigo-750 dark:bg-indigo-900/40"
+                            : "bg-emerald-100 text-emerald-750 dark:bg-emerald-900/40"
+                        }`}>
+                          {activeDetail.tx.type === "OUT" ? "BARANG KELUAR (POS)" : "BARANG MASUK (INBOUND)"}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 mt-2 block font-mono font-bold">PRODUK YANG TERLIBAT</span>
+                      <h3 className="text-base sm:text-lg font-black text-slate-800 dark:text-stone-100 leading-snug">{activeDetail.item?.name || "Produk tidak dikenal"}</h3>
+                      <p className="text-xs text-slate-450 font-mono">SKU: {activeDetail.item?.sku || "-"}</p>
+                    </div>
+
+                    {/* Quantity Transacted details */}
+                    <div className="flex justify-between items-center p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/40">
+                      <div>
+                        <span className="text-[11px] text-slate-400 font-mono block">JUMLAH ALIRAN STOK</span>
+                        <span className={`text-2xl font-black font-mono ${activeDetail.tx.type === "OUT" ? "text-indigo-600 dark:text-indigo-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                          {activeDetail.tx.type === "OUT" ? "-" : "+"} {activeDetail.tx.qty} {data.units.find(u => u.id === activeDetail.item?.unitId)?.name || ""}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[11px] text-slate-400 font-mono block">WAKTU EKSEKUSI</span>
+                        <span className="text-xs font-bold font-mono text-slate-700 dark:text-stone-300 block mt-1">
+                          {new Date(activeDetail.tx.date).toLocaleString("id-ID", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Detail Information List */}
+                    <div className="space-y-3.5 pt-1.5 font-medium">
+                      <div className="flex justify-between text-xs py-2 border-b border-dashed border-slate-150 dark:border-slate-800">
+                        <span className="text-slate-400 font-mono text-[10px]">OPERATOR / PIC</span>
+                        <span className="font-extrabold text-slate-800 dark:text-stone-200">
+                          {data.users.find(u => u.id === activeDetail.tx.userId)?.username || "User"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs py-2 border-b border-dashed border-slate-150 dark:border-slate-800">
+                        <span className="text-slate-400 font-mono text-[10px]">INVOICE LINK / ID</span>
+                        <span className="font-extrabold text-slate-700 dark:text-stone-300 font-mono text-indigo-505">
+                          {activeDetail.tx.invoiceId || "Tanpa Invoice"}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-1.5 py-1">
+                        <span className="text-slate-400 font-mono text-[10px]">MEMO / CATATAN TRANSAKSI</span>
+                        <div className="bg-slate-100/60 dark:bg-slate-950/30 p-3 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 leading-relaxed italic">
+                          "{activeDetail.tx.notes || "Tidak ada catatan tambahan"}"
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Footer */}
+              <div className="p-5 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/55 dark:bg-slate-900/35 flex gap-2">
+                <Button
+                  className="w-full bg-slate-900 hover:bg-black text-white dark:bg-slate-800 dark:hover:bg-slate-700 font-bold py-2.5 rounded-2xl"
+                  onClick={() => setActiveDetail(null)}
+                >
+                  Selesai Meninjau
                 </Button>
               </div>
             </motion.div>
