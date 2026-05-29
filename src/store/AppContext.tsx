@@ -201,13 +201,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     if (isLoading) return;
 
     if (currentUser) {
-      if (localStorage.getItem("gudang_remember") !== "false") {
-        localStorage.setItem("gudang_user", JSON.stringify(currentUser));
-        sessionStorage.removeItem("gudang_user");
-      } else {
-        sessionStorage.setItem("gudang_user", JSON.stringify(currentUser));
-        localStorage.removeItem("gudang_user");
-      }
+      localStorage.setItem("gudang_user", JSON.stringify(currentUser));
+      sessionStorage.setItem("gudang_user", JSON.stringify(currentUser));
     } else {
       localStorage.removeItem("gudang_user");
       sessionStorage.removeItem("gudang_user");
