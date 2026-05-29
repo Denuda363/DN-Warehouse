@@ -40,7 +40,6 @@ export type Item = {
   unitId: string;
   stock: number;
   unbatchedStock?: number;
-  minStock: number;
   sellingPrice?: number;
   expiryDate?: string;
   batchNumber?: string;
@@ -151,4 +150,6 @@ export type AppData = {
   navTextColor?: string;
   navIsTransparent?: boolean;
   warehouseProfile?: WarehouseProfile;
+  backgroundImage?: string | null;
+  backgroundOpacity?: number;
 };

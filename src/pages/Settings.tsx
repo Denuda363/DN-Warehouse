@@ -26,6 +26,35 @@ export const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     "theme" | "backup" | "profile" | "users" | "logs"
   >("theme");
+  const [pinInput, setPinInput] = useState("");
+  const DEFAULT_PIN = "123456";
+
+  const handleResetApp = () => {
+    if (pinInput !== DEFAULT_PIN) {
+      alert("PIN salah.");
+      return;
+    }
+    if (confirm("Ingin mereset seluruh data aplikasi dan mengembalikan ke setelan awal? SEMUA TRANSAKSI SEBELUMNYA AKAN HILANG.")) {
+       const initialData = {
+         users: data.users, // preserve users
+         categories: [],
+         units: [],
+         suppliers: [],
+         staffs: [],
+         items: [],
+         transactions: [],
+         purchaseInvoices: [],
+         activityLogs: [],
+         theme: "light" as "light" | "dark",
+         colorTheme: "indigo",
+         navStyle: "sidebar" as "sidebar" | "topbar" | "bottombar",
+         mobileNavStyle: "bottombar" as "sidebar" | "topbar" | "bottombar",
+       };
+       resetData(initialData as any);
+       alert("Reset data berhasil!");
+       setPinInput("");
+    }
+  };
 
   const handleBackup = () => {
     const backupJson = JSON.stringify(data, null, 2);
@@ -181,6 +210,66 @@ export const Settings: React.FC = () => {
                         }`}
                       />
                     ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium mb-3 flex items-center">
+                    Ganti Background / Wallpaper
+                  </p>
+                  <div className="flex flex-col gap-4">
+                     <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="relative border-slate-300"
+                          >
+                            <Upload className="w-3.5 h-3.5 mr-2" /> Upload Background
+                            <input
+                              type="file"
+                              accept="image/*"
+                              title="Upload Background"
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    updateData({
+                                      backgroundImage: event.target?.result as string,
+                                    });
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </Button>
+                        </div>
+                        {data.backgroundImage && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                            onClick={() => updateData({ backgroundImage: null })}
+                          >
+                            Hapus Background
+                          </Button>
+                        )}
+                     </div>
+                     {data.backgroundImage && (
+                        <div>
+                           <label className="text-xs text-slate-500 block mb-1">Tingkat Kegelapan/Kecerahan Transparansi Overlay Wallpaper: ({data.backgroundOpacity !== undefined ? data.backgroundOpacity : 80}%)</label>
+                           <input 
+                              type="range" min="0" max="100" 
+                              className="w-full sm:w-64 accent-indigo-600 cursor-pointer"
+                              value={data.backgroundOpacity !== undefined ? data.backgroundOpacity : 80}
+                              onChange={(e) => {
+                                 updateData({ backgroundOpacity: Number(e.target.value) });
+                              }}
+                           />
+                        </div>
+                     )}
                   </div>
                 </div>
 
@@ -379,9 +468,32 @@ export const Settings: React.FC = () => {
                   </Button>
                 </div>
                 <p className="text-xs text-slate-500 text-center mt-2">
-                  Simpan data secara berkala untuk menghindari kehilangan log
-                  stok.
+                  Simpan data secara berkala untuk menghindari kehilangan log stok.
                 </p>
+
+                <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-800">
+                  <h4 className="font-bold text-rose-600 mb-2">Reset Data Keseluruhan</h4>
+                  <p className="text-sm text-slate-500 mb-4">
+                    Peringatan: Semua data transaksi, stok, dan referensi akan terhapus. Masukkan PIN keamanan untuk melanjutkan. (PIN Default: <b>123456</b>)
+                  </p>
+                  <div className="flex gap-2">
+                    <Input 
+                      type="password" 
+                      placeholder="Masukkan PIN" 
+                      value={pinInput}
+                      onChange={(e) => setPinInput(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={handleResetApp}
+                      variant="destructive"
+                      className="bg-rose-600 text-white"
+                      disabled={!pinInput}
+                    >
+                      Reset Data
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}

@@ -31,7 +31,7 @@ export const Layout: React.FC<{
   const [showNotifications, setShowNotifications] = useState(false);
 
   // Notifications computing
-  const lowStockItems = data.items.filter((i) => i.stock <= i.minStock);
+  const lowStockItems: any[] = [];
 
   const soonInMs = 30 * 24 * 60 * 60 * 1000;
   const expiringItems: {
@@ -127,7 +127,23 @@ export const Layout: React.FC<{
       } ${desktopNav === "sidebar" ? "md:flex-row" : "md:flex-col"} ${
         mobileNav === "sidebar" ? "max-md:flex-row" : "max-md:flex-col"
       }`}
+      style={{
+        backgroundImage: data.backgroundImage ? `url(${data.backgroundImage})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      }}
     >
+      {/* Background Overlay */}
+      {data.backgroundImage && (
+        <div 
+          className="absolute inset-0 pointer-events-none z-[-1]" 
+          style={{ 
+            backgroundColor: data.theme === 'dark' ? '#000000' : '#ffffff',
+            opacity: data.backgroundOpacity !== undefined ? data.backgroundOpacity / 100 : 0.8
+          }} 
+        />
+      )}
       {/* Sidebar - Mobile Overlay */}
       {sidebarOpen && mobileNav !== "bottombar" && (
         <div
@@ -577,10 +593,7 @@ export const Layout: React.FC<{
                 <div>
                   <div className="font-bold text-rose-600 dark:text-rose-400 text-sm">
                     {lowStockItems.length}
-                  </div>
-                  <div>Stok Menipis</div>
-                </div>
-                <div>
+              </div>
                   <div className="font-bold text-orange-500 dark:text-orange-400 text-sm">
                     {expiringItems.length}
                   </div>
@@ -596,42 +609,6 @@ export const Layout: React.FC<{
 
               {/* List Content */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/30 dark:bg-slate-950/20 custom-scrollbar">
-                {/* Low Stock Section */}
-                {lowStockItems.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5 font-mono">
-                      <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
-                      Stok Menipis ({lowStockItems.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {lowStockItems.map((item) => (
-                        <div
-                          key={`ls-${item.id}`}
-                          className="p-3 bg-red-500/5 dark:bg-rose-950/25 rounded-xl border border-red-200/50 dark:border-rose-900/40 text-xs flex gap-3 shadow-xs hover:border-red-300 dark:hover:border-rose-800 transition-colors"
-                        >
-                          <div className="p-2 bg-red-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-400 rounded-lg self-start">
-                            <AlertTriangle
-                              className="w-4 h-4 animate-bounce"
-                              style={{ animationDuration: "3s" }}
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="font-bold text-slate-800 dark:text-stone-200 block truncate">
-                              {item.name}
-                            </span>
-                            <span className="text-slate-500 dark:text-slate-400 block mt-0.5 font-mono text-[10px]">
-                              SKU: {item.sku}
-                            </span>
-                            <span className="text-rose-600 dark:text-rose-400 font-bold block mt-1 font-semibold">
-                              Sisa: {item.stock} / Min: {item.minStock}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {/* Expiring Items Section */}
                 {expiringItems.length > 0 && (
                   <div className="space-y-2">

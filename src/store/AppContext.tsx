@@ -55,7 +55,6 @@ const defaultData: AppData = {
       categoryId: "cat-1",
       unitId: "unit-1",
       stock: 15,
-      minStock: 5,
     },
     {
       id: "item-2",
@@ -64,7 +63,6 @@ const defaultData: AppData = {
       categoryId: "cat-2",
       unitId: "unit-1",
       stock: 3,
-      minStock: 10,
     },
   ],
   transactions: [],

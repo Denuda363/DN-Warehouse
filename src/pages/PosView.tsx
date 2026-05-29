@@ -605,13 +605,8 @@ export const PosView: React.FC = () => {
                             <div className="font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight text-[11px] flex-1">
                               {item.name}
                             </div>
-                            <div className="flex items-center justify-between mt-1 text-[10px]">
-                              <span className={item.stock > 0 ? "text-slate-500 dark:text-slate-400" : "text-red-500 dark:text-red-400 font-medium"}>
-                                Stok:
-                              </span>
-                              <span className={item.stock > 0 ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-bold px-1.5 py-0.2 rounded font-mono" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-bold px-1.5 py-0.2 rounded font-mono"}>
-                                {item.stock}
-                              </span>
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                              {item.stock} {data.units.find(u => u.id === item.unitId)?.name}
                             </div>
                           </div>
                         </div>
@@ -635,12 +630,9 @@ export const PosView: React.FC = () => {
                           <div className="flex-1 min-w-0">
                             <h4 className="font-bold text-slate-800 dark:text-slate-200 text-[11px] truncate leading-tight">{item.name}</h4>
                             <p className="text-[9px] text-slate-400 font-mono mt-0.5">{item.sku || '-'}</p>
-                          </div>
-                          <div className="text-right shrink-0 relative z-10">
-                            <div className="text-[9px] text-slate-400">Stok</div>
-                            <div className={item.stock > 0 ? "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-[10px] font-bold px-1.5 py-0.5 rounded font-mono mt-0.5" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[10px] font-bold px-1.5 py-0.5 rounded font-mono mt-0.5"}>
-                              {item.stock}
-                            </div>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                              {item.stock} {data.units.find(u => u.id === item.unitId)?.name}
+                            </p>
                           </div>
                           
                           {item.stock <= 0 && (

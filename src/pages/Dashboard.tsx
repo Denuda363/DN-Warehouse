@@ -117,9 +117,6 @@ export const Dashboard: React.FC = () => {
 
   const totalItems = displayItems.length;
   const totalStock = displayItems.reduce((acc, item) => acc + item.stock, 0);
-  const lowStock = displayItems.filter(
-    (item) => item.stock <= item.minStock,
-  ).length;
 
   const thisMonthTransactions = useMemo(() => {
     const now = new Date();
@@ -238,28 +235,7 @@ export const Dashboard: React.FC = () => {
           </Card>
         </motion.div>
 
-        <motion.div variants={itemVariants}>
-          <Card className="hover:shadow-md transition-shadow relative overflow-hidden group">
-            <div className="absolute top-0 right-0 h-16 w-16 bg-rose-500/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">
-                  Limit Stok (Menipis)
-                </p>
-                <h2
-                  className={`text-3xl font-bold ${lowStock > 0 ? "text-rose-500" : "text-slate-800 dark:text-slate-100"}`}
-                >
-                  {lowStock}
-                </h2>
-              </div>
-              <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center border ${lowStock > 0 ? "bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border-rose-100/30" : "bg-slate-50 text-slate-450 dark:bg-slate-900/50 dark:text-slate-400 border-slate-100/30"}`}
-              >
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+
 
         <motion.div variants={itemVariants}>
           <Card className="hover:shadow-md transition-shadow relative overflow-hidden group">
@@ -557,59 +533,7 @@ export const Dashboard: React.FC = () => {
           </Card>
         </motion.div>
 
-        {/* Action Needed Section for Low Stock Items */}
-        <motion.div variants={itemVariants}>
-          <Card className="hover:shadow-md transition-all h-full flex flex-col">
-            <CardHeader className="shrink-0">
-              <CardTitle className="text-base font-semibold">
-                Peringatan Rekomendasi Stok ({lowStock})
-              </CardTitle>
-              <p className="text-xs text-slate-400 mt-1">
-                Daftar produk yang berada di bawah limit minimal.
-              </p>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto max-h-[300px] pr-2 p-6 pt-0 custom-scrollbar">
-              <div className="space-y-3">
-                {displayItems.filter((i) => i.stock <= i.minStock).length ===
-                0 ? (
-                  <div className="text-center py-12 text-slate-500 text-sm flex flex-col items-center justify-center">
-                    <Compass className="w-8 h-8 mb-2 opacity-20 text-emerald-500" />
-                    Kondisi logistik prima. Semua stok di atas limit aman.
-                  </div>
-                ) : (
-                  displayItems
-                    .filter((i) => i.stock <= i.minStock)
-                    .map((item, idx) => (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.03 }}
-                        className="flex items-center justify-between p-3.5 rounded-xl border border-rose-100/50 bg-rose-50/25 dark:border-rose-950/30 dark:bg-rose-950/10 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-colors"
-                      >
-                        <div className="min-w-0 pr-4">
-                          <p className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">
-                            {item.name}
-                          </p>
-                          <p className="text-[10px] text-slate-450 uppercase tracking-widest mt-1">
-                            SKU: {item.sku}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-rose-600 font-extrabold text-base dark:text-rose-400">
-                            {item.stock}
-                          </p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">
-                            Limit: {item.minStock}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+
       </div>
     </motion.div>
   );
