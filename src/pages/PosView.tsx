@@ -124,8 +124,8 @@ export const PosView: React.FC = () => {
         const conversion = getConversionRate(itemWithNewBatch, itemWithNewBatch.selectedUnitId);
         const availableStock = getSelectedBatchStock(itemWithNewBatch);
         const maxInputQty = Math.floor(availableStock / conversion);
-        const val = Math.min(itemWithNewBatch.inputQty, maxInputQty);
-        const finalQty = maxInputQty > 0 ? Math.max(1, val) : 0;
+        const val = Math.min(i.inputQty, maxInputQty);
+        const finalQty = maxInputQty > 0 ? Math.max(0, val) : 0;
         return { 
           ...itemWithNewBatch, 
           inputQty: finalQty, 
@@ -142,7 +142,7 @@ export const PosView: React.FC = () => {
         const conversion = getConversionRate(i, i.selectedUnitId);
         const availableStock = getSelectedBatchStock(i);
         const maxInputQty = Math.floor(availableStock / conversion);
-        const validQty = Math.max(1, Math.min(qty, maxInputQty));
+        const validQty = Math.max(0, Math.min(qty, maxInputQty));
         return { ...i, inputQty: validQty, cartQty: validQty * conversion };
       }
       return i;
@@ -155,7 +155,7 @@ export const PosView: React.FC = () => {
         const conversion = getConversionRate(i, unitId);
         const availableStock = getSelectedBatchStock(i);
         const maxInputQty = Math.floor(availableStock / conversion);
-        const validQty = Math.min(i.inputQty, maxInputQty);
+        const validQty = Math.max(0, Math.min(i.inputQty, maxInputQty));
         return { ...i, selectedUnitId: unitId, inputQty: validQty, cartQty: validQty * conversion };
       }
       return i;
@@ -167,7 +167,11 @@ export const PosView: React.FC = () => {
   };
 
   const handleCheckout = () => {
-    if (cart.length === 0) return;
+    const activeCart = cart.filter(item => item.cartQty > 0);
+    if (activeCart.length === 0) {
+      alert('Tidak ada barang dengan jumlah lebih dari 0 untuk dicheckout!');
+      return;
+    }
     
     const groupId = `POS-${Date.now()}`;
     const now = new Date();
@@ -175,7 +179,7 @@ export const PosView: React.FC = () => {
     const date = `${txDate}T${timeString}`;
 
     // Create transactions for each out
-    const newTxs: Transaction[] = cart.map(item => {
+    const newTxs: Transaction[] = activeCart.map(item => {
       const selectedBatchStr = item.selectedBatch === 'unbatched' ? 'Tanpa Batch' : `Batch ${item.selectedBatch}`;
       const noteStr = penyedia 
         ? `Penyedia: ${penyedia} | ${selectedBatchStr}` 
@@ -196,11 +200,11 @@ export const PosView: React.FC = () => {
       };
     });
 
-    logActivity("Transaksi Keluar (POS)", `Mengeluarkan ${cart.length} jenis barang. Penyedia: ${penyedia || '-'}`);
+    logActivity("Transaksi Keluar (POS)", `Mengeluarkan ${activeCart.length} jenis barang. Penyedia: ${penyedia || '-'}`);
 
     // Deduct stock
     const newItems = data.items.map(item => {
-      const inCart = cart.find(c => c.id === item.id);
+      const inCart = activeCart.find(c => c.id === item.id);
       if (inCart) {
         const qtyToDeduct = inCart.cartQty;
         const selectedBatch = inCart.selectedBatch || 'unbatched';
@@ -824,12 +828,16 @@ export const PosView: React.FC = () => {
                        <Input 
                          type="number"
                          className="w-10 sm:w-14 h-7 text-center font-bold px-1 py-0 appearance-none bg-transparent border-none focus:ring-0 focus:outline-none dark:text-white" 
-                         value={item.inputQty || ''}
+                         value={item.inputQty === 0 ? 0 : (item.inputQty || '')}
                          onChange={e => {
                            const val = parseInt(e.target.value);
-                           if (!isNaN(val)) updateCartQty(item.id, val);
+                           if (!isNaN(val)) {
+                             updateCartQty(item.id, val);
+                           } else {
+                             updateCartQty(item.id, 0);
+                           }
                          }}
-                         min={1}
+                         min={0}
                        />
                        <button onClick={() => updateCartQty(item.id, item.inputQty + 1)} className="w-7 h-7 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 rounded hover:shadow-sm">+</button>
                      </div>
@@ -848,7 +856,7 @@ export const PosView: React.FC = () => {
           <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-3 rounded-b-xl">
             <Button 
               onClick={handleCheckout}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || cart.every(item => item.cartQty === 0)}
               className="w-full h-14 mt-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-lg rounded-xl shadow-md border-b-4 border-indigo-700 hover:mt-3 hover:mb-[-4px] hover:border-b-0 active:border-b-0 transition-all flex flex-col items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="flex items-center gap-2">
