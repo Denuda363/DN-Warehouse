@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAppContext } from "../store/AppContext";
+import { ClockWidget } from "./ClockWidget";
 import { Button } from "./ui/Button";
 import { JarvisTransition } from "./JarvisTransition";
 import jsPDF from "jspdf";
@@ -665,6 +666,7 @@ export const Layout: React.FC<{
           </div>
 
           <div className="flex items-center gap-2 sm:gap-6">
+            <ClockWidget />
             <div>
               <button
                 className={`p-2.5 relative rounded-xl transition-all duration-200 active:scale-95 ${
