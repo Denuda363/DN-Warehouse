@@ -13,24 +13,24 @@ export function ClockWidget() {
   const minutes = time.getMinutes().toString().padStart(2, '0');
   const seconds = time.getSeconds().toString().padStart(2, '0');
 
-  // get current date string like Sen, 29 Mei
-  const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short' };
+  // get current date string like Senin, 29 Mei 2026
+  const dateOptions: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
   const dateString = time.toLocaleDateString('id-ID', dateOptions);
 
   return (
-    <div className="flex flex-col items-end mr-1 sm:mr-2">
-      <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-100 dark:bg-slate-800/50 px-1.5 sm:px-2.5 py-1 rounded-md border border-slate-200/60 dark:border-slate-700/60 shadow-sm relative overflow-hidden group">
+    <div className="flex flex-col items-end mr-2 sm:mr-4">
+      <div className="flex items-center gap-2 sm:gap-2.5 bg-slate-100 dark:bg-slate-800/50 px-2 sm:px-3 py-1.5 rounded-lg border border-slate-200/60 dark:border-slate-700/60 shadow-sm relative overflow-hidden group">
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-teal-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-        <Clock className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 group-hover:animate-spin-slow transition-all duration-700 z-10 hidden sm:block" />
-        <div className="font-mono font-bold tracking-tight text-slate-700 dark:text-slate-200 text-xs sm:text-sm z-10 flex items-center shadow-sm">
+        <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500 dark:text-indigo-400 group-hover:animate-spin-slow transition-all duration-700 z-10" />
+        <div className="font-mono font-bold tracking-tight text-slate-700 dark:text-slate-200 text-sm sm:text-base z-10 flex items-center drop-shadow-sm">
           <span>{hours}</span>
           <span className="text-slate-400 dark:text-slate-500 mx-px animate-[pulse_1s_ease-in-out_infinite]">:</span>
           <span>{minutes}</span>
-          <span className="text-slate-400 dark:text-slate-500 mx-px hidden sm:inline-block animate-[pulse_1s_ease-in-out_infinite]">:</span>
-          <span className="text-teal-600 dark:text-teal-400 hidden sm:inline-block">{seconds}</span>
+          <span className="text-slate-400 dark:text-slate-500 mx-px animate-[pulse_1s_ease-in-out_infinite]">:</span>
+          <span className="text-teal-600 dark:text-teal-400">{seconds}</span>
         </div>
       </div>
-      <div className="hidden sm:block text-[10px] font-medium text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider pr-1">
+      <div className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 mt-1 sm:mt-1.5 tracking-wide pr-1">
         {dateString}
       </div>
     </div>
