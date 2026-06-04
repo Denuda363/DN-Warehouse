@@ -62,7 +62,7 @@ export const PosView: React.FC = () => {
   const getSelectedBatchStock = (item: CartItem): number => {
     if (!item.selectedBatch || item.selectedBatch === 'unbatched') {
       const totalBatchStock = item.batches?.reduce((acc, b) => acc + (b.stock || 0), 0) || 0;
-      return item.unbatchedStock !== undefined ? item.unbatchedStock : Math.max(0, item.stock - totalBatchStock);
+      return Math.max(0, item.stock - totalBatchStock);
     }
     const match = item.batches?.find(b => b.batchNumber === item.selectedBatch);
     return match ? (match.stock ?? 0) : 0;
@@ -90,7 +90,7 @@ export const PosView: React.FC = () => {
       
       let initialBatch = 'unbatched';
       const totalBatchStock = item.batches?.reduce((acc, b) => acc + (b.stock || 0), 0) || 0;
-      const unbatchedStock = item.unbatchedStock !== undefined ? item.unbatchedStock : Math.max(0, item.stock - totalBatchStock);
+      const unbatchedStock = Math.max(0, item.stock - totalBatchStock);
       
       if (unbatchedStock === 0 && item.batches && item.batches.length > 0) {
         const firstAvailableBatch = item.batches.find(b => (b.stock ?? 0) > 0);
@@ -790,7 +790,7 @@ export const PosView: React.FC = () => {
                          className="flex h-7 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-900 font-semibold text-slate-700 dark:text-slate-200"
                        >
                          <option value="unbatched">
-                           Tanpa Batch / Umum (Stok: {item.unbatchedStock !== undefined ? item.unbatchedStock : Math.max(0, (item.stock || 0) - (item.batches?.reduce((sum, b) => sum + (b.stock || 0), 0) || 0))})
+                           Tanpa Batch / Umum (Stok: {Math.max(0, (item.stock || 0) - (item.batches?.reduce((sum, b) => sum + (b.stock || 0), 0) || 0))})
                          </option>
                          {item.batches?.map(b => (
                            <option key={b.batchNumber} value={b.batchNumber}>

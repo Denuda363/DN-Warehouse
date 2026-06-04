@@ -74,13 +74,36 @@ export const PurchaseInvoiceList: React.FC<{
     )
       return;
 
-    // We must reverse the stock additions
+    // We must reverse the stock additions with batch awareness
     let updatedItems = [...data.items];
     invoice.items.forEach((invItem) => {
       let actualRevertQty = invItem.qty - invItem.returnedQty;
       updatedItems = updatedItems.map((item) => {
         if (item.id === invItem.itemId) {
-          return { ...item, stock: item.stock - actualRevertQty }; // reduce stock back
+          const normBatchNo = invItem.batchNo ? invItem.batchNo.trim() : "";
+          const batches = item.batches ? [...item.batches] : [];
+          let unbatchedStock = item.unbatchedStock !== undefined ? item.unbatchedStock : item.stock;
+
+          if (normBatchNo !== "") {
+            const batchIdx = batches.findIndex(b => b.batchNumber === normBatchNo);
+            if (batchIdx >= 0) {
+              const existingBatch = batches[batchIdx];
+              batches[batchIdx] = {
+                ...existingBatch,
+                stock: Math.max(0, (existingBatch.stock || 0) - actualRevertQty)
+              };
+            }
+          } else {
+            unbatchedStock = Math.max(0, unbatchedStock - actualRevertQty);
+          }
+
+          const totalBatchStock = batches.reduce((sum, b) => sum + (b.stock || 0), 0);
+          return {
+            ...item,
+            batches,
+            unbatchedStock,
+            stock: Math.max(0, unbatchedStock + totalBatchStock)
+          };
         }
         return item;
       });
@@ -157,7 +180,30 @@ export const PurchaseInvoiceList: React.FC<{
 
     const updatedItems = data.items.map((item) => {
       if (item.id === itemId) {
-        return { ...item, stock: item.stock - qty };
+        const normBatchNo = invoiceItem.batchNo ? invoiceItem.batchNo.trim() : "";
+        const batches = item.batches ? [...item.batches] : [];
+        let unbatchedStock = item.unbatchedStock !== undefined ? item.unbatchedStock : item.stock;
+
+        if (normBatchNo !== "") {
+          const batchIdx = batches.findIndex(b => b.batchNumber === normBatchNo);
+          if (batchIdx >= 0) {
+            const existingBatch = batches[batchIdx];
+            batches[batchIdx] = {
+              ...existingBatch,
+              stock: Math.max(0, (existingBatch.stock || 0) - qty)
+            };
+          }
+        } else {
+          unbatchedStock = Math.max(0, unbatchedStock - qty);
+        }
+
+        const totalBatchStock = batches.reduce((sum, b) => sum + (b.stock || 0), 0);
+        return {
+          ...item,
+          batches,
+          unbatchedStock,
+          stock: Math.max(0, unbatchedStock + totalBatchStock)
+        };
       }
       return item;
     });

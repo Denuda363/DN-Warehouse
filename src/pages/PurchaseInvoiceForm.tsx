@@ -20,6 +20,43 @@ import {
 import { Item } from "../types";
 import { motion, AnimatePresence } from "motion/react";
 
+function adjustItemStock(item: Item, batchNo: string | undefined, expDate: string | undefined, changeQty: number): Item {
+  const normBatchNo = batchNo ? batchNo.trim() : "";
+  const batches = item.batches ? [...item.batches] : [];
+  let unbatchedStock = item.unbatchedStock !== undefined ? item.unbatchedStock : item.stock;
+
+  if (normBatchNo !== "") {
+    const batchIdx = batches.findIndex(b => b.batchNumber === normBatchNo);
+    if (batchIdx >= 0) {
+      const existingBatch = batches[batchIdx];
+      const newBatchStock = Math.max(0, (existingBatch.stock || 0) + changeQty);
+      batches[batchIdx] = {
+        ...existingBatch,
+        stock: newBatchStock,
+        expiryDate: expDate || existingBatch.expiryDate || ""
+      };
+    } else {
+      batches.push({
+        batchNumber: normBatchNo,
+        expiryDate: expDate || "",
+        stock: Math.max(0, changeQty)
+      });
+    }
+  } else {
+    unbatchedStock = Math.max(0, unbatchedStock + changeQty);
+  }
+
+  const totalBatchStock = batches.reduce((sum, b) => sum + (b.stock || 0), 0);
+  const totalStock = Math.max(0, unbatchedStock + totalBatchStock);
+
+  return {
+    ...item,
+    batches,
+    unbatchedStock,
+    stock: totalStock
+  };
+}
+
 type InvoiceItemForm = {
   item: Item | null;
   qty: number | "";
@@ -331,13 +368,13 @@ export const PurchaseInvoiceForm: React.FC<{
         (i) => i.id === editInvoiceId,
       );
       if (oldInvoice) {
-        // Revert old stock
+        // Revert old stock with batch awareness
         oldInvoice.items.forEach((oldItem) => {
           currentItemsState = currentItemsState.map((p) => {
             if (p.id === oldItem.itemId) {
               const bQty = oldItem.baseQty || oldItem.qty;
               const returned = oldItem.returnedQty || 0;
-              return { ...p, stock: Math.max(0, p.stock - (bQty - returned)) };
+              return adjustItemStock(p, oldItem.batchNo, oldItem.expDate, -(bQty - returned));
             }
             return p;
           });
@@ -438,7 +475,7 @@ export const PurchaseInvoiceForm: React.FC<{
         const returnedQty = invItem.returnedQty || 0;
         currentItemsState = currentItemsState.map((item) => {
           if (item.id === invItem.itemId) {
-            return { ...item, stock: item.stock + (bQty - returnedQty) };
+            return adjustItemStock(item, invItem.batchNo, invItem.expDate, bQty - returnedQty);
           }
           return item;
         });

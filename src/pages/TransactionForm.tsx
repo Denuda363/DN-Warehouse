@@ -38,9 +38,14 @@ export const TransactionForm: React.FC<{ type: 'IN' | 'OUT' }> = ({ type }) => {
 
     const newItems = data.items.map(i => {
       if (i.id === itemId) {
+        const adjustment = type === 'IN' ? Number(qty) : -Number(qty);
+        const currentUnbatched = i.unbatchedStock !== undefined ? i.unbatchedStock : i.stock;
+        const newUnbatched = Math.max(0, currentUnbatched + adjustment);
+        const totalBatchStock = i.batches?.reduce((acc, b) => acc + (b.stock || 0), 0) || 0;
         return {
           ...i,
-          stock: type === 'IN' ? i.stock + Number(qty) : i.stock - Number(qty)
+          unbatchedStock: newUnbatched,
+          stock: Math.max(0, newUnbatched + totalBatchStock)
         };
       }
       return i;
