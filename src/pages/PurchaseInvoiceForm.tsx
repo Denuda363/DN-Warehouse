@@ -4,6 +4,7 @@ import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { SearchableSelect } from "../components/ui/SearchableSelect";
+import * as XLSX from "xlsx";
 import {
   CheckCircle2,
   Trash2,
@@ -161,6 +162,103 @@ export const PurchaseInvoiceForm: React.FC<{
       paidAmount: 0,
       items: [],
     };
+  };
+
+  const downloadInvoiceTemplate = () => {
+    const rows = [
+      {
+        SKU: "BRG-001",
+        Nama_Produk: "Contoh Produk A",
+        Qty: 10,
+        Harga_Beli: 12000,
+        Nomor_Batch: "BATCH-A1",
+        Tanggal_Kadaluarsa: "2027-12-31"
+      },
+      {
+        SKU: "BRG-002",
+        Nama_Produk: "Contoh Produk B",
+        Qty: 25,
+        Harga_Beli: 5000,
+        Nomor_Batch: "",
+        Tanggal_Kadaluarsa: ""
+      }
+    ];
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Draft_Item_Faktur");
+    XLSX.writeFile(workbook, "Template_Import_Faktur.xlsx");
+  };
+
+  const handleInvoiceExcelImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const dataArr: any[] = XLSX.utils.sheet_to_json(ws);
+        if (dataArr.length === 0) {
+          alert("Data excel kosong!");
+          return;
+        }
+
+        const importedInvoiceItems: InvoiceItem[] = [];
+        const notFoundSkus: string[] = [];
+
+        dataArr.forEach((row: any, index) => {
+          const skuStr = String(row.SKU || row.KODE_PRODUK || "").trim();
+          if (!skuStr) return;
+
+          const matchedItem = data.items.find(
+            (item) => item.sku?.toLowerCase() === skuStr.toLowerCase()
+          );
+
+          if (!matchedItem) {
+            notFoundSkus.push(skuStr);
+            return;
+          }
+
+          const qty = Number(row.Qty || row.QTY || row.Jumlah || 0);
+          const price = Number(row.Harga_Beli || row.Harga || row.HARGA_BELI || matchedItem.purchasePrice || 0);
+          const batchNo = String(row.Nomor_Batch || row.BATCH_NO || "").trim();
+          const expDate = String(row.Tanggal_Kadaluarsa || row.EXP_DATE || "").trim();
+
+          const itemSubtotal = price * qty;
+
+          importedInvoiceItems.push({
+            id: `item-temp-${Date.now()}-${index}-${Math.random().toString(36).substring(2, 9)}`,
+            item: matchedItem,
+            qty,
+            selectedUnitId: matchedItem.unitId,
+            price,
+            discountType: "Rp",
+            discountValue: 0,
+            batchNo,
+            expDate,
+            subtotal: itemSubtotal
+          });
+        });
+
+        if (importedInvoiceItems.length > 0) {
+          updateActiveDraftItems((prevItems) => [...prevItems, ...importedInvoiceItems]);
+          let msg = `Berhasil mengimpor ${importedInvoiceItems.length} item komoditas ke dalam draft faktur ini!`;
+          if (notFoundSkus.length > 0) {
+            msg += `\n\nBeberapa SKU berikut tidak ditemukan: ${notFoundSkus.join(", ")}`;
+          }
+          alert(msg);
+        } else {
+          alert("Tidak ada item valid yang berhasil diimpor! Pastikan kolom SKU sesuai dengan Master Data.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Gagal memproses file excel. Pastikan format file sesuai.");
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = "";
   };
 
   useEffect(() => {
@@ -874,9 +972,30 @@ export const PurchaseInvoiceForm: React.FC<{
 
                   {/* Add Product Segment nested inside active draft */}
                   <div className="border border-emerald-100/70 dark:border-emerald-905/30 bg-emerald-50/5 dark:bg-emerald-950/5 rounded-2xl p-6 mb-8">
-                    <h3 className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
-                      <Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-450 animate-pulse" /> MASUKKAN BARANG BARU KE DAFTAR FAKTUR
-                    </h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                      <h3 className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <Plus className="w-4 h-4 text-emerald-600 dark:text-emerald-450 animate-pulse" /> MASUKKAN BARANG BARU KE DAFTAR FAKTUR
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={downloadInvoiceTemplate}
+                          type="button"
+                          className="text-[10px] uppercase font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-450 px-2.5 py-1.5 rounded-lg border border-emerald-200/50 dark:border-emerald-900/30 transition-all cursor-pointer"
+                          title="Download Template Excel"
+                        >
+                          Unduh Template Excel
+                        </button>
+                        <label className="text-[10px] uppercase font-bold text-teal-700 hover:text-teal-800 bg-teal-100 dark:bg-teal-950/40 dark:text-teal-400 px-2.5 py-1.5 rounded-lg border border-teal-200/50 dark:border-teal-900/30 transition-all cursor-pointer block">
+                          <span>Import Excel</span>
+                          <input
+                            type="file"
+                            accept=".xlsx, .xls"
+                            onChange={handleInvoiceExcelImport}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                       {/* Row 1, Col 1: Nama Barang / SKU */}

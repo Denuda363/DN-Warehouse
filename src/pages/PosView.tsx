@@ -6,6 +6,7 @@ import { Search, History, UserSquare, Users, CreditCard, ScanLine, Save, ArrowLe
 import { Item, Transaction } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 type CartItem = Item & {
   cartQty: number; // total base units
@@ -36,6 +37,171 @@ export const PosView: React.FC = () => {
     'bg-amber-400', 'bg-lime-400', 'bg-purple-600', 'bg-stone-400',
     'bg-emerald-700', 'bg-cyan-500', 'bg-rose-200', 'bg-red-500', 'bg-sky-200'
   ];
+
+  const downloadPosTemplate = () => {
+    const rows = [
+      {
+        SKU: "BRG-001",
+        Nama_Produk: "Contoh Produk A",
+        Qty: 2,
+        Satuan: "Pcs",
+        Nomor_Batch: "BATCH-A1"
+      },
+      {
+        SKU: "BRG-002",
+        Nama_Produk: "Contoh Produk B",
+        Qty: 5,
+        Satuan: "Box",
+        Nomor_Batch: "unbatched"
+      }
+    ];
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "POS_Cart");
+    XLSX.writeFile(workbook, "Template_Import_POS.xlsx");
+  };
+
+  const handlePosExcelImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const dataArr: any[] = XLSX.utils.sheet_to_json(ws);
+        if (dataArr.length === 0) {
+          alert("Data excel kosong!");
+          return;
+        }
+
+        const importedCartItems: CartItem[] = [];
+        const warnings: string[] = [];
+
+        dataArr.forEach((row: any) => {
+          const skuStr = String(row.SKU || "").trim();
+          if (!skuStr) return;
+
+          const matchedItem = data.items.find(
+            (item) => item.sku?.toLowerCase() === skuStr.toLowerCase()
+          );
+
+          if (!matchedItem) {
+            warnings.push(`SKU "${skuStr}" tidak ditemukan di Master Data.`);
+            return;
+          }
+
+          const qty = Number(row.Qty || row.QTY || row.Jumlah || 1);
+          if (qty <= 0) return;
+
+          // Determine corresponding unit id
+          let unitId = matchedItem.unitId;
+          const unitNameStr = String(row.Satuan || row.SATUAN || "").trim();
+          if (unitNameStr) {
+            const matchedUnit = data.units.find(
+              (u) => u.name.toLowerCase() === unitNameStr.toLowerCase()
+            );
+            if (matchedUnit) {
+              if (matchedUnit.id === matchedItem.unitId) {
+                unitId = matchedItem.unitId;
+              } else {
+                const altMatch = matchedItem.alternateUnits?.find(
+                  (alt) => alt.unitId === matchedUnit.id
+                );
+                if (altMatch) {
+                  unitId = matchedUnit.id;
+                } else {
+                  warnings.push(`Satuan "${unitNameStr}" bukan satuan alternatif valid untuk SKU "${skuStr}". Menggunakan default.`);
+                }
+              }
+            } else {
+              warnings.push(`Satuan "${unitNameStr}" tidak ditemukan. Menggunakan default.`);
+            }
+          }
+
+          // Determine batch number
+          let batchNo = "unbatched";
+          const excelBatch = String(row.Nomor_Batch || row.NOMOR_BATCH || row.Batch || "").trim();
+          if (excelBatch) {
+            batchNo = excelBatch;
+          } else {
+            const totalBatchStock = matchedItem.batches?.reduce((acc: number, b: any) => acc + (b.stock || 0), 0) || 0;
+            const unbatchedStock = Math.max(0, matchedItem.stock - totalBatchStock);
+            if (unbatchedStock === 0 && matchedItem.batches && matchedItem.batches.length > 0) {
+              const firstAvailableBatch = matchedItem.batches.find((b: any) => (b.stock ?? 0) > 0);
+              if (firstAvailableBatch) {
+                batchNo = firstAvailableBatch.batchNumber;
+              }
+            }
+          }
+
+          // Construct CartItem object
+          const conversion = getConversionRate(matchedItem, unitId);
+          const cartQty = qty * conversion;
+
+          const tempCartItem: CartItem = {
+            ...matchedItem,
+            inputQty: qty,
+            cartQty: cartQty,
+            selectedUnitId: unitId,
+            selectedBatch: batchNo
+          };
+
+          // Check batch stock validation
+          const availableStock = getSelectedBatchStock(tempCartItem);
+          if (availableStock < cartQty) {
+            warnings.push(
+              `Stok tidak mencukupi untuk "${matchedItem.name}" (${
+                batchNo === "unbatched" ? "Tanpa Batch" : `Batch ${batchNo}`
+              }). Tersedia: ${availableStock}, Meminta: ${cartQty}`
+            );
+            const maxInputQty = Math.floor(availableStock / conversion);
+            if (maxInputQty > 0) {
+              tempCartItem.inputQty = maxInputQty;
+              tempCartItem.cartQty = maxInputQty * conversion;
+              importedCartItems.push(tempCartItem);
+            }
+          } else {
+            importedCartItems.push(tempCartItem);
+          }
+        });
+
+        if (importedCartItems.length > 0) {
+          setCart((prev) => {
+            const merged = [...prev];
+            importedCartItems.forEach((newItem) => {
+              const dupIdx = merged.findIndex((item) => item.id === newItem.id);
+              if (dupIdx >= 0) {
+                merged[dupIdx] = newItem;
+              } else {
+                merged.push(newItem);
+              }
+            });
+            return merged;
+          });
+
+          let successMsg = `Berhasil mengimpor ${importedCartItems.length} barang ke dalam keranjang POS!`;
+          if (warnings.length > 0) {
+            successMsg += `\n\nCatatan / Peringatan:\n` + warnings.join("\n");
+          }
+          alert(successMsg);
+        } else {
+          let errorMsg = "Tidak ada barang valid yang berhasil diimpor ke keranjang!";
+          if (warnings.length > 0) {
+            errorMsg += `\n\nMasalah:\n` + warnings.join("\n");
+          }
+          alert(errorMsg);
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Gagal memproses file excel. Pastikan format file sesuai.");
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = "";
+  };
 
   const getInitials = (name: string) => {
     return name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
@@ -768,6 +934,31 @@ export const PosView: React.FC = () => {
 
         {/* Right Pane - Cart */}
         <div className={`flex-1 min-h-0 w-full lg:max-w-[400px] lg:min-w-[320px] bg-white dark:bg-slate-950 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex-col shrink-0 lg:shrink ${mobileView === 'cart' && viewMode === 'pos' ? 'flex' : 'hidden lg:flex'}`}>
+          {/* Cart Section Header with Excel Import/Template triggers */}
+          <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-900/40 rounded-t-xl shrink-0">
+            <span className="font-bold text-sm text-slate-800 dark:text-slate-200 flex items-center gap-1.5 font-sans">
+              <CreditCard className="w-4 h-4 text-indigo-600" />
+              Keranjang POS ({cart.length})
+            </span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={downloadPosTemplate}
+                className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 dark:bg-indigo-950/40 dark:text-indigo-400 px-2 py-1 rounded transition-colors uppercase tracking-wider cursor-pointer"
+                title="Unduh Template Excel POS"
+              >
+                Template
+              </button>
+              <label className="text-[10px] font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-55 dark:bg-emerald-950/40 dark:text-emerald-400 px-2 py-1 rounded cursor-pointer transition-colors uppercase tracking-wider block">
+                <span>Import</span>
+                <input 
+                  type="file" 
+                  accept=".xlsx, .xls" 
+                  onChange={handlePosExcelImport} 
+                  className="hidden" 
+                />
+              </label>
+            </div>
+          </div>
           {/* Cart Items List */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {cart.length === 0 ? (
