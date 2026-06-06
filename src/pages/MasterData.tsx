@@ -408,32 +408,82 @@ export const MasterData: React.FC = () => {
     let rows: any[] = [];
     let fileName = "Template.xlsx";
     if (activeTab === "items") {
-      rows = [
-        {
-          SKU: "BRG-001",
-          Nama_Produk: "Contoh Produk A",
-          Harga_Jual: 15000,
-          Stok: 100,
-          Kategori: "Makanan",
-          Satuan: "Pcs",
-          Supplier_Utama: "PT Sumber Rejeki",
-          Kontak_Supplier_Utama: "08123456789",
-          Supplier_Alternatif: "CV Makmur Abadi",
-          Kontak_Supplier_Alternatif: "08987654321",
-        },
-      ];
+      if (data.items && data.items.length > 0) {
+        rows = data.items.map((item) => {
+          const category = data.categories.find((c) => c.id === item.categoryId);
+          const unit = data.units.find((u) => u.id === item.unitId);
+          const primarySup = data.suppliers.find((s) => s.id === item.supplierId);
+          const altSup = data.suppliers.find((s) => s.id === item.altSupplierId);
+          return {
+            SKU: item.sku || "",
+            Nama_Produk: item.name || "",
+            Harga_Jual: item.sellingPrice || 0,
+            Stok: item.stock || 0,
+            Kategori: category ? category.name : "",
+            Satuan: unit ? unit.name : "",
+            Supplier_Utama: primarySup ? primarySup.name : "",
+            Kontak_Supplier_Utama: primarySup ? primarySup.contact : "",
+            Supplier_Alternatif: altSup ? altSup.name : "",
+            Kontak_Supplier_Alternatif: altSup ? altSup.contact : "",
+          };
+        });
+      } else {
+        rows = [
+          {
+            SKU: "BRG-001",
+            Nama_Produk: "Contoh Produk A",
+            Harga_Jual: 15000,
+            Stok: 100,
+            Kategori: "Makanan",
+            Satuan: "Pcs",
+            Supplier_Utama: "PT Sumber Rejeki",
+            Kontak_Supplier_Utama: "08123456789",
+            Supplier_Alternatif: "CV Makmur Abadi",
+            Kontak_Supplier_Alternatif: "08987654321",
+          },
+        ];
+      }
       fileName = "Template_Produk.xlsx";
     } else if (activeTab === "categories") {
-      rows = [{ Nama_Kategori: "", Deskripsi: "" }];
+      if (data.categories && data.categories.length > 0) {
+        rows = data.categories.map((c) => ({
+          Nama_Kategori: c.name,
+          Deskripsi: c.description || "",
+        }));
+      } else {
+        rows = [{ Nama_Kategori: "Makanan", Deskripsi: "Kategori untuk makanan ringan" }];
+      }
       fileName = "Template_Kategori.xlsx";
     } else if (activeTab === "units") {
-      rows = [{ Nama_Satuan: "", Deskripsi: "" }];
+      if (data.units && data.units.length > 0) {
+        rows = data.units.map((u) => ({
+          Nama_Satuan: u.name,
+          Deskripsi: u.description || "",
+        }));
+      } else {
+        rows = [{ Nama_Satuan: "Pcs", Deskripsi: "Satuan bijian" }];
+      }
       fileName = "Template_Satuan.xlsx";
     } else if (activeTab === "suppliers") {
-      rows = [{ Nama_Supplier: "", Kontak: "", Alamat: "" }];
+      if (data.suppliers && data.suppliers.length > 0) {
+        rows = data.suppliers.map((s) => ({
+          Nama_Supplier: s.name,
+          Kontak: s.contact || "",
+          Alamat: s.address || "",
+        }));
+      } else {
+        rows = [{ Nama_Supplier: "PT Sumber Rejeki", Kontak: "08123456789", Alamat: "Jl. Merdeka No. 10" }];
+      }
       fileName = "Template_Supplier.xlsx";
     } else if (activeTab === "staffs") {
-      rows = [{ Nama_Staff: "", Telepon: "" }];
+      if (data.staffs && data.staffs.length > 0) {
+        rows = data.staffs.map((s) => ({
+          Nama_Staff: s.name,
+          Telepon: s.phone || "",
+        }));
+      } else {
+        rows = [{ Nama_Staff: "Ahmad", Telepon: "08122334455" }];
+      }
       fileName = "Template_Staff.xlsx";
     } else {
       return;
