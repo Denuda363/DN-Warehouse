@@ -753,12 +753,18 @@ export const PosView: React.FC = () => {
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
                     {filteredItems.map((item, idx) => {
                       const colorClass = colors[idx % colors.length];
+                      const inCart = cart.find(c => c.id === item.id);
                       return (
                         <div 
                           key={item.id} 
                           onClick={() => { if (item.stock > 0) addToCart(item); }}
-                          className={`bg-white dark:bg-slate-950 border rounded-lg overflow-hidden relative flex flex-col p-1.5 ${item.stock > 0 ? 'border-slate-200 dark:border-slate-800 cursor-pointer hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-500 transition-all group' : 'border-red-200 dark:border-red-900/50 cursor-not-allowed opacity-70 grayscale-[50%]'}`}
+                          className={`bg-white dark:bg-slate-950 border rounded-lg overflow-hidden relative flex flex-col p-1.5 ${item.stock > 0 ? 'border-slate-200 dark:border-slate-800 cursor-pointer hover:shadow-md hover:border-indigo-400 dark:hover:border-indigo-500 transition-all group' : 'border-red-200 dark:border-red-900/50 cursor-not-allowed opacity-70 grayscale-[50%]'} ${inCart ? 'ring-2 ring-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/20' : ''}`}
                         >
+                          {inCart && (
+                            <div className="absolute top-1 right-1 bg-indigo-600 text-white text-[10px] font-bold min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full z-10 shadow-sm border-[1.5px] border-white dark:border-slate-900">
+                              {inCart.inputQty}
+                            </div>
+                          )}
                           <div className={`h-14 ${colorClass} rounded-md flex items-center justify-center relative overflow-hidden ${item.stock > 0 ? 'group-hover:opacity-90 transition-opacity' : ''} shrink-0`}>
                             <span className="text-lg font-bold text-white/90 drop-shadow-sm">{getInitials(item.name)}</span>
                             <div className="absolute bottom-1 right-1 bg-black/40 text-white text-[8px] px-1 py-0.5 rounded font-mono">
@@ -786,12 +792,18 @@ export const PosView: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
                     {filteredItems.map((item, idx) => {
                       const colorClass = colors[idx % colors.length];
+                      const inCart = cart.find(c => c.id === item.id);
                       return (
                         <div 
                           key={item.id} 
                           onClick={() => { if (item.stock > 0) addToCart(item); }}
-                          className={`bg-white dark:bg-slate-950 border rounded-lg p-2 flex items-center gap-2 relative overflow-hidden ${item.stock > 0 ? 'border-slate-200 dark:border-slate-800 cursor-pointer hover:shadow-sm hover:border-indigo-400 dark:hover:border-indigo-500 transition-all group' : 'border-red-200 dark:border-red-900/50 cursor-not-allowed opacity-75 grayscale-[30%]'}`}
+                          className={`bg-white dark:bg-slate-950 border rounded-lg p-2 flex items-center gap-2 relative overflow-hidden ${item.stock > 0 ? 'border-slate-200 dark:border-slate-800 cursor-pointer hover:shadow-sm hover:border-indigo-400 dark:hover:border-indigo-500 transition-all group' : 'border-red-200 dark:border-red-900/50 cursor-not-allowed opacity-75 grayscale-[30%]'} ${inCart ? 'ring-1 ring-indigo-500 bg-indigo-50/30 dark:bg-indigo-900/20' : ''}`}
                         >
+                          {inCart && (
+                            <div className="absolute top-1 right-1 bg-indigo-600 text-white text-[10px] font-bold min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full z-10 shadow-sm border-[1.5px] border-white dark:border-slate-900">
+                              {inCart.inputQty}
+                            </div>
+                          )}
                           <div className={`w-10 h-10 rounded-md ${colorClass} flex items-center justify-center shrink-0 relative overflow-hidden`}>
                             <span className="text-xs font-bold text-white">{getInitials(item.name)}</span>
                           </div>
