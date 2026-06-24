@@ -4,6 +4,7 @@ import { useAppContext } from "../store/AppContext";
 import { ClockWidget } from "./ClockWidget";
 import { Button } from "./ui/Button";
 import { JarvisTransition } from "./JarvisTransition";
+import { ExportLowStockModal } from "./ExportLowStockModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -26,6 +27,7 @@ import {
   History,
   ChevronDown,
   ChevronUp,
+  Download,
 } from "lucide-react";
 
 export const Layout: React.FC<{
@@ -35,6 +37,7 @@ export const Layout: React.FC<{
 }> = ({ children, currentPath, navigate }) => {
   const { currentUser, setCurrentUser, data, logActivity } = useAppContext();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [lowStockCollapsed, setLowStockCollapsed] = useState(false);
   const [selectedNotifTab, setSelectedNotifTab] = useState<"semua" | "stok" | "expired" | "arus">("semua");
@@ -103,83 +106,6 @@ export const Layout: React.FC<{
     return (
       data.suppliers.find((s) => s.id === id)?.name || "Supplier Tidak Dikenal"
     );
-  };
-
-  const exportLowStockPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Laporan Stok Menipis", 14, 20);
-
-    let yPos = 30;
-
-    Object.keys(lowStockBySupplier).forEach((supplierId) => {
-      const supplierName = getSupplierName(supplierId);
-      const items = lowStockBySupplier[supplierId];
-
-      doc.setFontSize(12);
-      doc.text(`Supplier: ${supplierName}`, 14, yPos);
-      yPos += 5;
-
-      const head = [
-        [
-          "SKU",
-          "Nama Produk",
-          "Stok",
-          "Min. Stok",
-          "Satuan",
-          "Supplier Alternatif",
-        ],
-      ];
-      const body = items.map((item) => [
-        item.sku,
-        item.name,
-        item.stock.toString(),
-        (item.minStock !== undefined ? item.minStock : 5).toString(),
-        data.units.find((u) => u.id === item.unitId)?.name || "-",
-        getSupplierName(item.altSupplierId),
-      ]);
-
-      autoTable(doc, {
-        startY: yPos,
-        head,
-        body,
-        theme: "grid",
-        headStyles: { fillColor: [79, 70, 229] },
-        margin: { top: 10 },
-      });
-
-      yPos = (doc as any).lastAutoTable.finalY + 15;
-
-      if (yPos > 270) {
-        doc.addPage();
-        yPos = 20;
-      }
-    });
-
-    doc.save("Laporan_Stok_Menipis.pdf");
-  };
-
-  const exportLowStockExcel = () => {
-    const rows: any[] = [];
-    Object.keys(lowStockBySupplier).forEach((supplierId) => {
-      const supplierName = getSupplierName(supplierId);
-      const items = lowStockBySupplier[supplierId];
-      items.forEach((item) => {
-        rows.push({
-          "Nama Barang": item.name,
-          "Stok": item.stock,
-          "Satuan": data.units.find((u) => u.id === item.unitId)?.name || "-",
-          "Kategori": data.categories.find((c) => c.id === item.categoryId)?.name || "-",
-          "Supplier": supplierName,
-          "Supplier Alternatif": getSupplierName(item.altSupplierId),
-        });
-      });
-    });
-
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Stok Menipis");
-    XLSX.writeFile(workbook, "Laporan_Stok_Menipis.xlsx");
   };
 
   const soonInMs = 30 * 24 * 60 * 60 * 1000;
@@ -941,20 +867,12 @@ export const Layout: React.FC<{
                       </span>
                       <div className="flex gap-1 shrink-0">
                         <Button
-                          onClick={exportLowStockExcel}
+                          onClick={() => setIsExportModalOpen(true)}
                           size="sm"
-                          className="px-2 py-0.5 text-[9px] h-6 bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs border border-emerald-750"
+                          className="px-2 py-0.5 text-[9px] h-6 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs border border-indigo-750"
                         >
-                          <FileSpreadsheet className="w-3 h-3 mr-1 shrink-0" />
-                          Excel
-                        </Button>
-                        <Button
-                          onClick={exportLowStockPDF}
-                          size="sm"
-                          className="px-2 py-0.5 text-[9px] h-6 bg-rose-600 hover:bg-rose-700 text-white shadow-xs border border-rose-750"
-                        >
-                          <FileText className="w-3 h-3 mr-1 shrink-0" />
-                          PDF
+                          <Download className="w-3 h-3 mr-1 shrink-0" />
+                          Ekspor
                         </Button>
                       </div>
                     </div>
@@ -1371,6 +1289,13 @@ export const Layout: React.FC<{
           </>
         )}
       </AnimatePresence>
+
+      <ExportLowStockModal 
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        lowStockItems={lowStockItems}
+        data={data}
+      />
     </div>
   );
 };

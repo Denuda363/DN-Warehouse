@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Item, Category, Unit, Supplier, Staff } from "../types";
 import { JarvisTransition } from "../components/JarvisTransition";
+import { ExportLowStockModal } from "../components/ExportLowStockModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -59,6 +60,7 @@ export const MasterData: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     "items" | "categories" | "units" | "suppliers" | "staffs" | "low-stock"
   >("items");
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -327,83 +329,6 @@ export const MasterData: React.FC = () => {
     );
   };
 
-  const exportLowStockPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Laporan Stok Menipis", 14, 20);
-
-    let yPos = 30;
-
-    Object.keys(lowStockBySupplier).forEach((supplierId) => {
-      const supplierName = getSupplierName(supplierId);
-      const items = lowStockBySupplier[supplierId];
-
-      doc.setFontSize(12);
-      doc.text(`Supplier: ${supplierName}`, 14, yPos);
-      yPos += 5;
-
-      const head = [
-        [
-          "SKU",
-          "Nama Produk",
-          "Stok",
-          "Min. Stok",
-          "Satuan",
-          "Supplier Alternatif",
-        ],
-      ];
-      const body = items.map((item) => [
-        item.sku,
-        item.name,
-        item.stock.toString(),
-        item.minStock.toString(),
-        data.units.find((u) => u.id === item.unitId)?.name || "-",
-        getSupplierName(item.altSupplierId),
-      ]);
-
-      autoTable(doc, {
-        startY: yPos,
-        head,
-        body,
-        theme: "grid",
-        headStyles: { fillColor: [79, 70, 229] },
-        margin: { top: 10 },
-      });
-
-      yPos = (doc as any).lastAutoTable.finalY + 15;
-
-      if (yPos > 270) {
-        doc.addPage();
-        yPos = 20;
-      }
-    });
-
-    doc.save("Laporan_Stok_Menipis.pdf");
-  };
-
-  const exportLowStockExcel = () => {
-    const rows: any[] = [];
-    Object.keys(lowStockBySupplier).forEach((supplierId) => {
-      const supplierName = getSupplierName(supplierId);
-      const items = lowStockBySupplier[supplierId];
-      items.forEach((item) => {
-        rows.push({
-          "Nama Barang": item.name,
-          "Stok": item.stock,
-          "Satuan": data.units.find((u) => u.id === item.unitId)?.name || "-",
-          "Kategori": data.categories.find((c) => c.id === item.categoryId)?.name || "-",
-          "Supplier": supplierName,
-          "Supplier Alternatif": getSupplierName(item.altSupplierId),
-        });
-      });
-    });
-
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Stok Menipis");
-    XLSX.writeFile(workbook, "Laporan_Stok_Menipis.xlsx");
-  };
-
   const downloadTemplate = () => {
     let rows: any[] = [];
     let fileName = "Template.xlsx";
@@ -640,22 +565,13 @@ export const MasterData: React.FC = () => {
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {activeTab === "low-stock" ? (
-            <>
-              <Button
-                onClick={exportLowStockExcel}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm border border-emerald-750 w-full sm:w-auto"
-              >
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Export Excel
-              </Button>
-              <Button
-                onClick={exportLowStockPDF}
-                className="bg-rose-600 hover:bg-rose-700 text-white shadow-sm border border-rose-750 w-full sm:w-auto"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Export PDF
-              </Button>
-            </>
+            <Button
+              onClick={() => setIsExportModalOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm w-full sm:w-auto"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Ekspor Data
+            </Button>
           ) : (
             <>
               <Button
@@ -1685,6 +1601,12 @@ export const MasterData: React.FC = () => {
           </div>
         </div>
       )}
+      <ExportLowStockModal 
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        lowStockItems={lowStockItems}
+        data={data}
+      />
     </div>
   );
 };
