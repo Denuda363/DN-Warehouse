@@ -50,6 +50,13 @@ export const ExportLowStockModal: React.FC<ExportLowStockModalProps> = ({ isOpen
     { id: '4', field: 'minStock', customHeader: 'Min. Stok' },
     { id: '5', field: 'unit', customHeader: 'Satuan' },
   ]);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set(lowStockItems.map(i => i.id)));
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setSelectedItemIds(new Set(lowStockItems.map(i => i.id)));
+    }
+  }, [isOpen, lowStockItems]);
 
   if (!isOpen) return null;
 
@@ -104,9 +111,11 @@ export const ExportLowStockModal: React.FC<ExportLowStockModalProps> = ({ isOpen
 
     const head = [columns.map(c => c.customHeader)];
     
+    const itemsToExport = lowStockItems.filter(i => selectedItemIds.has(i.id));
+
     if (groupBySupplier) {
       let yPos = 30;
-      const grouped = lowStockItems.reduce((acc, item) => {
+      const grouped = itemsToExport.reduce((acc, item) => {
         const key = item.supplierId || "unknown";
         if (!acc[key]) acc[key] = [];
         acc[key].push(item);
@@ -130,6 +139,16 @@ export const ExportLowStockModal: React.FC<ExportLowStockModalProps> = ({ isOpen
           theme: "grid",
           headStyles: { fillColor: [79, 70, 229] },
           margin: { top: 10 },
+          didDrawPage: (data) => {
+            doc.setFontSize(10);
+            const pageCount = (doc as any).internal.getNumberOfPages();
+            doc.text(
+              `Halaman ${pageCount}`,
+              doc.internal.pageSize.getWidth() - 20,
+              doc.internal.pageSize.getHeight() - 10,
+              { align: 'right' }
+            );
+          }
         });
 
         yPos = (doc as any).lastAutoTable.finalY + 15;
@@ -140,13 +159,23 @@ export const ExportLowStockModal: React.FC<ExportLowStockModalProps> = ({ isOpen
         }
       });
     } else {
-      const body = lowStockItems.map(item => columns.map(c => getFieldValue(item, c.field)));
+      const body = itemsToExport.map(item => columns.map(c => getFieldValue(item, c.field)));
       autoTable(doc, {
         startY: 30,
         head,
         body,
         theme: "grid",
         headStyles: { fillColor: [79, 70, 229] },
+        didDrawPage: (data) => {
+          doc.setFontSize(10);
+          const pageCount = (doc as any).internal.getNumberOfPages();
+          doc.text(
+            `Halaman ${pageCount}`,
+            doc.internal.pageSize.getWidth() - 20,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: 'right' }
+          );
+        }
       });
     }
 
@@ -156,9 +185,10 @@ export const ExportLowStockModal: React.FC<ExportLowStockModalProps> = ({ isOpen
 
   const handleExportExcel = () => {
     const rows: any[] = [];
+    const itemsToExport = lowStockItems.filter(i => selectedItemIds.has(i.id));
     
     if (groupBySupplier) {
-      const grouped = lowStockItems.reduce((acc, item) => {
+      const grouped = itemsToExport.reduce((acc, item) => {
         const key = item.supplierId || "unknown";
         if (!acc[key]) acc[key] = [];
         acc[key].push(item);
@@ -176,7 +206,7 @@ export const ExportLowStockModal: React.FC<ExportLowStockModalProps> = ({ isOpen
         });
       });
     } else {
-      lowStockItems.forEach(item => {
+      itemsToExport.forEach(item => {
         const rowData: any = {};
         columns.forEach(c => {
           rowData[c.customHeader] = getFieldValue(item, c.field);
@@ -190,6 +220,24 @@ export const ExportLowStockModal: React.FC<ExportLowStockModalProps> = ({ isOpen
     XLSX.utils.book_append_sheet(workbook, worksheet, "Stok Menipis");
     XLSX.writeFile(workbook, "Laporan_Stok_Menipis.xlsx");
     onClose();
+  };
+
+  const toggleItemSelection = (id: string) => {
+    const newSelected = new Set(selectedItemIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItemIds(newSelected);
+  };
+
+  const toggleAllSelection = () => {
+    if (selectedItemIds.size === lowStockItems.length) {
+      setSelectedItemIds(new Set());
+    } else {
+      setSelectedItemIds(new Set(lowStockItems.map(i => i.id)));
+    }
   };
 
   return (
@@ -299,6 +347,42 @@ export const ExportLowStockModal: React.FC<ExportLowStockModalProps> = ({ isOpen
                   </button>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Item Selection */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-2">
+              <h3 className="font-semibold text-sm text-slate-700 dark:text-slate-300">Pilih Item ({selectedItemIds.size}/{lowStockItems.length})</h3>
+              <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={selectedItemIds.size === lowStockItems.length && lowStockItems.length > 0}
+                  onChange={toggleAllSelection}
+                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                Pilih Semua
+              </label>
+            </div>
+            <div className="max-h-48 overflow-y-auto space-y-1 border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-slate-50 dark:bg-slate-900/50">
+              {lowStockItems.length === 0 ? (
+                <div className="p-4 text-center text-sm text-slate-500">Tidak ada item stok menipis</div>
+              ) : (
+                lowStockItems.map(item => (
+                  <label key={item.id} className="flex items-center gap-3 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md cursor-pointer transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedItemIds.has(item.id)}
+                      onChange={() => toggleItemSelection(item.id)}
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 mt-0.5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-slate-900 dark:text-white truncate">{item.name}</div>
+                      <div className="text-xs text-slate-500">Stok: {item.stock} / Min: {item.minStock || 0}</div>
+                    </div>
+                  </label>
+                ))
+              )}
             </div>
           </div>
 
