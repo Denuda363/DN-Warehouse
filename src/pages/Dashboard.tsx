@@ -421,42 +421,42 @@ export const Dashboard: React.FC = () => {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-6"
+      className="space-y-4 md:space-y-6"
     >
       {/* Modern Dashboard Header Banner */}
       <motion.div
         variants={itemVariants}
-        className="relative bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6 md:p-8 text-white shadow-lg"
+        className="relative bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-5 md:p-8 text-white shadow-lg"
       >
         <div className="absolute top-0 right-0 h-48 w-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 h-32 w-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-5 md:gap-6">
           <div className="space-y-2">
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-semibold tracking-wider uppercase font-mono">
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-[10px] md:text-xs font-semibold tracking-wider uppercase font-mono">
               <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Live Stats Monitor
             </span>
-            <h1 className="text-2xl md:text-3.5xl font-extrabold tracking-tight">
+            <h1 className="text-xl md:text-3.5xl font-extrabold tracking-tight">
               {greetingText}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-emerald-300">{currentUser?.username || "Staff"}</span>!
             </h1>
-            <p className="text-slate-300/85 text-sm max-w-xl leading-relaxed">
+            <p className="text-slate-300/85 text-xs md:text-sm max-w-xl leading-relaxed">
               Inilah ringkasan aktivitas logistik, indikator stok barang kritis, rincian valuasi investasi aset barang, serta volume transaksi real-time.
             </p>
           </div>
 
-          <div className="flex flex-wrap md:flex-nowrap gap-4 items-center shrink-0">
+          <div className="grid grid-cols-3 gap-2 w-full md:w-auto md:flex md:flex-nowrap md:gap-4 items-center shrink-0">
             {/* Real-time statistics summaries */}
-            <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center min-w-[90px] md:min-w-[110px]">
-              <span className="text-slate-400 text-[10px] uppercase font-bold block mb-1">Inbound</span>
-              <span className="text-xl md:text-2xl font-black text-emerald-400 font-mono">+{rangeFlowSummary.totalIn}</span>
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-2.5 md:p-3 border border-white/10 text-center min-w-[80px] md:min-w-[110px]">
+              <span className="text-slate-400 text-[9px] md:text-[10px] uppercase font-bold block mb-1">Inbound</span>
+              <span className="text-lg md:text-2xl font-black text-emerald-400 font-mono">+{rangeFlowSummary.totalIn}</span>
             </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center min-w-[90px] md:min-w-[110px]">
-              <span className="text-slate-400 text-[10px] uppercase font-bold block mb-1">Outbound</span>
-              <span className="text-xl md:text-2xl font-black text-rose-400 font-mono">-{rangeFlowSummary.totalOut}</span>
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-2.5 md:p-3 border border-white/10 text-center min-w-[80px] md:min-w-[110px]">
+              <span className="text-slate-400 text-[9px] md:text-[10px] uppercase font-bold block mb-1">Outbound</span>
+              <span className="text-lg md:text-2xl font-black text-rose-400 font-mono">-{rangeFlowSummary.totalOut}</span>
             </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-xl p-3 border border-white/10 text-center min-w-[90px] md:min-w-[110px]">
-              <span className="text-slate-400 text-[10px] uppercase font-bold block mb-1">Turnover</span>
-              <span className="text-xl md:text-2xl font-black text-indigo-350 font-mono">
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-2.5 md:p-3 border border-white/10 text-center min-w-[80px] md:min-w-[110px]">
+              <span className="text-slate-400 text-[9px] md:text-[10px] uppercase font-bold block mb-1">Turnover</span>
+              <span className="text-lg md:text-2xl font-black text-indigo-350 font-mono">
                 {totalStock > 0 ? ((rangeFlowSummary.totalOut / (totalStock + rangeFlowSummary.totalOut)) * 100).toFixed(1) + "%" : "0%"}
               </span>
             </div>
@@ -467,13 +467,13 @@ export const Dashboard: React.FC = () => {
       {/* Dashboard Interactive Controller Shelf */}
       <motion.div
         variants={itemVariants}
-        className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl gap-4 shadow-xs"
+        className="flex flex-col md:flex-row justify-between items-start md:items-center p-3 md:p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl gap-3 md:gap-4 shadow-xs"
       >
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-bold text-slate-450 uppercase tracking-widest mr-1 font-mono">Filter Sektor:</span>
+        <div className="flex overflow-x-auto items-center gap-2 w-full md:w-auto pb-1 md:pb-0 whitespace-nowrap scrollbar-hide">
+          <span className="text-[10px] md:text-xs font-bold text-slate-450 uppercase tracking-widest mr-1 font-mono shrink-0">Filter Sektor:</span>
           <button
             onClick={() => setSelectedCategory("ALL")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all shrink-0 ${
               selectedCategory === "ALL"
                 ? "bg-indigo-600 text-white shadow-xs"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-150"
@@ -489,23 +489,23 @@ export const Dashboard: React.FC = () => {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all shrink-0 ${
                   selectedCategory === cat.id
                     ? "bg-indigo-600 text-white shadow-xs"
                     : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-350 hover:bg-slate-150"
                 }`}
               >
-                {cat.name} <span className="opacity-60 text-[10px] font-mono font-bold">({num})</span>
+                {cat.name} <span className="opacity-60 text-[9px] md:text-[10px] font-mono font-bold">({num})</span>
               </button>
             );
           })}
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0 bg-slate-100 dark:bg-slate-805 p-1 rounded-lg border dark:border-slate-800/40">
-          <span className="text-[10px] font-bold py-1 px-2 text-slate-500 uppercase tracking-wide font-mono">Rentang Waktu:</span>
+        <div className="flex items-center gap-1.5 shrink-0 bg-slate-100 dark:bg-slate-805 p-1 rounded-lg border dark:border-slate-800/40 w-full md:w-auto overflow-x-auto">
+          <span className="text-[9px] md:text-[10px] font-bold py-1 px-2 text-slate-500 uppercase tracking-wide font-mono shrink-0">Rentang Waktu:</span>
           <button
             onClick={() => setDateRange("7_DAYS")}
-            className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 md:py-1 rounded-md text-[10px] md:text-xs font-bold transition-all shrink-0 ${
               dateRange === "7_DAYS"
                 ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs border border-slate-200/50"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-805"
@@ -515,7 +515,7 @@ export const Dashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setDateRange("30_DAYS")}
-            className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 md:py-1 rounded-md text-[10px] md:text-xs font-bold transition-all shrink-0 ${
               dateRange === "30_DAYS"
                 ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-xs border border-slate-200/50"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-805"
@@ -532,7 +532,7 @@ export const Dashboard: React.FC = () => {
         <motion.div variants={itemVariants}>
           <Card className="hover:shadow-md transition-all relative overflow-hidden group border-slate-200 dark:border-slate-800/40 h-full">
             <div className="absolute top-0 right-0 h-16 w-16 bg-emerald-500/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
-            <CardContent className="p-6">
+            <CardContent className="p-5 md:p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -564,7 +564,7 @@ export const Dashboard: React.FC = () => {
               : "border-slate-200 dark:border-slate-800/40"
           }`}>
             <div className="absolute top-0 right-0 h-16 w-16 bg-rose-500/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
-            <CardContent className="p-6">
+            <CardContent className="p-5 md:p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -598,7 +598,7 @@ export const Dashboard: React.FC = () => {
         <motion.div variants={itemVariants}>
           <Card className="hover:shadow-md transition-all relative overflow-hidden group border-slate-200 dark:border-slate-800/40 h-full">
             <div className="absolute top-0 right-0 h-16 w-16 bg-blue-500/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
-            <CardContent className="p-6">
+            <CardContent className="p-5 md:p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -626,16 +626,16 @@ export const Dashboard: React.FC = () => {
       {/* Smart Notifications Box Widget */}
       {smartAlerts.length > 0 && (
         <motion.div variants={itemVariants}>
-          <div className="bg-gradient-to-r from-amber-500/5 to-orange-500/5 border border-amber-550/20 dark:border-amber-900/30 rounded-2xl p-4 flex gap-4 items-start shadow-xs">
-            <div className="p-2.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
-              <Bell className="w-5 h-5 animate-bounce" />
+          <div className="bg-gradient-to-r from-amber-500/5 to-orange-500/5 border border-amber-550/20 dark:border-amber-900/30 rounded-2xl p-3 md:p-4 flex gap-3 md:gap-4 items-start shadow-xs">
+            <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
+              <Bell className="w-4 h-4 md:w-5 md:h-5 animate-bounce" />
             </div>
             <div className="space-y-1.5 flex-1 select-none">
-              <h3 className="font-bold text-slate-800 dark:text-white text-xs uppercase tracking-wider font-mono">Info Pengawasan Cepat</h3>
+              <h3 className="font-bold text-slate-800 dark:text-white text-[10px] md:text-xs uppercase tracking-wider font-mono">Info Pengawasan Cepat</h3>
               <ul className="space-y-1.5">
                 {smartAlerts.map((alert, idx) => (
-                  <li key={idx} className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  <li key={idx} className="text-[11px] md:text-xs text-slate-600 dark:text-slate-300 flex items-start md:items-center gap-2">
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 md:mt-0 ${
                       alert.type === "critical" ? "bg-red-500" : alert.type === "warning" ? "bg-amber-500" : "bg-blue-500"
                     }`} />
                     <span className="font-medium leading-relaxed">{alert.msg}</span>
@@ -648,30 +648,30 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Bento Grid layout containing Area Chart (Flow), Donut Chart (Categories), and Top valued Items */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Area Chart of Flow Transactions */}
         <motion.div variants={itemVariants} className="lg:col-span-2">
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
-            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 gap-3 shrink-0">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 gap-3 shrink-0 px-4 pt-4 md:px-6 md:pt-6">
               <div>
-                <CardTitle className="text-base font-bold text-slate-800 dark:text-white">
+                <CardTitle className="text-sm md:text-base font-bold text-slate-800 dark:text-white">
                   Arus Trafik Keluar Masuk Barang
                 </CardTitle>
-                <p className="text-xs text-slate-450 mt-1">
+                <p className="text-[10px] md:text-xs text-slate-450 mt-1">
                   Volume barang harian ({dateRange === "7_DAYS" ? "7" : "30"} Hari ke Belakang)
                 </p>
               </div>
-              <div className="flex gap-4 text-[10px] font-bold uppercase tracking-wider font-mono shrink-0">
-                <span className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-md border border-emerald-100/30">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" /> Masuk
+              <div className="flex gap-2 md:gap-4 text-[9px] md:text-[10px] font-bold uppercase tracking-wider font-mono shrink-0">
+                <span className="flex items-center gap-1 md:gap-1.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-md border border-emerald-100/30">
+                  <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500" /> Masuk
                 </span>
-                <span className="flex items-center gap-1.5 bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-md border border-orange-100/30">
-                  <span className="w-2 h-2 rounded-full bg-orange-500" /> Keluar
+                <span className="flex items-center gap-1 md:gap-1.5 bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 px-2 py-1 rounded-md border border-orange-100/30">
+                  <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-orange-500" /> Keluar
                 </span>
               </div>
             </CardHeader>
-            <CardContent className="flex-1 min-h-[320px] flex items-center p-6 pt-0">
-              <div className="h-[300px] w-full">
+            <CardContent className="flex-1 min-h-[250px] md:min-h-[320px] flex items-center p-3 md:p-6 pt-0">
+              <div className="h-[250px] md:h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={chartData}
@@ -735,15 +735,15 @@ export const Dashboard: React.FC = () => {
         {/* Donut Chart Rasio Porsi Kategori */}
         <motion.div variants={itemVariants}>
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
-            <CardHeader className="pb-2 shrink-0">
-              <CardTitle className="text-base font-bold text-slate-800 dark:text-white">
+            <CardHeader className="pb-2 shrink-0 px-4 pt-4 md:px-6 md:pt-6">
+              <CardTitle className="text-sm md:text-base font-bold text-slate-800 dark:text-white">
                 Distribusi Kategori
               </CardTitle>
-              <p className="text-xs text-slate-450 mt-1">
+              <p className="text-[10px] md:text-xs text-slate-450 mt-1">
                 Persentase stok fisik yang tersebar per sektor
               </p>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col justify-center p-6">
+            <CardContent className="flex-1 flex flex-col justify-center p-4 md:p-6">
               {categoryDistribution.length === 0 ? (
                 <div className="text-center py-16 text-slate-400 text-xs flex flex-col items-center justify-center h-[260px]">
                   <Archive className="w-10 h-10 mb-2 opacity-15 stroke-1" />
@@ -823,16 +823,16 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Bento Grid Part 2: Top Products Bar Chart, Watchlist Supplier, and Critical Stock list */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Top Products Bar Chart with valuation/stock toggle */}
         <motion.div variants={itemVariants} className="lg:col-span-2">
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
-            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 gap-3 shrink-0">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 gap-3 shrink-0 px-4 pt-4 md:px-6 md:pt-6">
               <div>
-                <CardTitle className="text-base font-bold text-slate-805 dark:text-white flex items-center gap-2">
+                <CardTitle className="text-sm md:text-base font-bold text-slate-805 dark:text-white flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-indigo-500" /> Analisis Produk Tertinggi
                 </CardTitle>
-                <p className="text-xs text-slate-450 mt-1">
+                <p className="text-[10px] md:text-xs text-slate-450 mt-1">
                   Komoditas top 5 berdasarkan parameter nilai yang dipilih
                 </p>
               </div>
@@ -992,12 +992,12 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Operational Shelf: Live recent transactional timeline, critical checklist panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Watchlist: Critical Stock Alert list */}
         <motion.div variants={itemVariants}>
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
-            <CardHeader className="pb-3 shrink-0">
-              <CardTitle className="text-base font-bold text-slate-805 dark:text-white flex items-center justify-between">
+            <CardHeader className="pb-3 shrink-0 px-4 pt-4 md:px-6 md:pt-6">
+              <CardTitle className="text-sm md:text-base font-bold text-slate-805 dark:text-white flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <span className="flex h-2 w-2 relative">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -1009,11 +1009,11 @@ export const Dashboard: React.FC = () => {
                   {criticalItemsList.length} Item
                 </span>
               </CardTitle>
-              <p className="text-xs text-slate-450 mt-1">
+              <p className="text-[10px] md:text-xs text-slate-450 mt-1">
                 Daftar barang di bawah tingkat minimal yang memerlukan restok segera.
               </p>
             </CardHeader>
-            <CardContent className="flex-1 p-6 pt-0 flex flex-col justify-between">
+            <CardContent className="flex-1 p-4 md:p-6 pt-0 flex flex-col justify-between">
               {criticalItemsList.length === 0 ? (
                 <div className="text-center py-16 text-slate-400 text-xs flex flex-col items-center justify-center md:h-[220px]">
                   <CheckCircle2 className="w-10 h-10 mb-2 text-emerald-500 opacity-70" />
@@ -1065,18 +1065,18 @@ export const Dashboard: React.FC = () => {
         {/* Live Outbound/Inbound compact Flow timeline */}
         <motion.div variants={itemVariants} className="lg:col-span-2">
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
-            <CardHeader className="pb-3 shrink-0">
-              <CardTitle className="text-base font-bold text-slate-805 dark:text-white flex items-center justify-between">
+            <CardHeader className="pb-3 shrink-0 px-4 pt-4 md:px-6 md:pt-6">
+              <CardTitle className="text-sm md:text-base font-bold text-slate-805 dark:text-white flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Activity className="w-4.5 h-4.5 text-indigo-500 animate-pulse" /> Transaksi Terbaru
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-450 font-mono">Arus Logistik</span>
+                <span className="text-[9px] md:text-[10px] uppercase font-bold tracking-widest text-slate-450 font-mono">Arus Logistik</span>
               </CardTitle>
-              <p className="text-xs text-slate-450 mt-1">
+              <p className="text-[10px] md:text-xs text-slate-450 mt-1">
                 Timeline arus masuk (Inbound) dan checkout keluar (Outbound) mutakhir dari database.
               </p>
             </CardHeader>
-            <CardContent className="flex-1 p-6 pt-0 flex flex-col justify-between">
+            <CardContent className="flex-1 p-4 md:p-6 pt-0 flex flex-col justify-between">
               {recentTransactionsCompact.length === 0 ? (
                 <div className="text-center py-16 text-slate-450 text-xs flex flex-col items-center justify-center md:h-[220px]">
                   <Clock className="w-10 h-10 mb-2 opacity-15 stroke-1" />

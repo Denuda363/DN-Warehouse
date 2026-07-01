@@ -92,6 +92,8 @@ export const Settings: React.FC = () => {
         }
       } catch (error) {
         alert("Gagal membaca file JSON.");
+      } finally {
+        e.target.value = "";
       }
     };
     reader.readAsText(file);
