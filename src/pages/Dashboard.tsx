@@ -26,6 +26,8 @@ import {
   RefreshCw,
   Bell,
   Archive,
+  Download,
+  X,
 } from "lucide-react";
 import {
   AreaChart,
@@ -42,7 +44,8 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
+import * as XLSX from "xlsx";
 
 const COLORS = [
   "#6366f1", // indigo
@@ -119,6 +122,7 @@ export const Dashboard: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [dateRange, setDateRange] = useState<"7_DAYS" | "30_DAYS" | "THIS_MONTH">("7_DAYS");
   const [highlightMetric, setHighlightMetric] = useState<"VALUATION" | "STOCK">("VALUATION");
+  const [selectedCriticalItem, setSelectedCriticalItem] = useState<any | null>(null);
 
   // Filter out category restrictions based on role
   const currentUserCategories = currentUser?.allowedCategoryIds || [];
@@ -376,6 +380,24 @@ export const Dashboard: React.FC = () => {
       .slice(0, 5);
   }, [filteredItemsByCat]);
 
+  const handleExportCriticalStock = () => {
+    const wb = XLSX.utils.book_new();
+    const exportData = criticalItemsList.map(item => ({
+      ID: item.id,
+      SKU: item.sku,
+      Nama: item.name,
+      Stok_Saat_Ini: item.stock,
+      Stok_Minimal: item.minStock !== undefined ? item.minStock : 5,
+      Kategori: data.categories.find(c => c.id === item.categoryId)?.name || "-",
+      Harga_Jual: item.sellingPrice || 0,
+      Status: item.stock <= 0 ? "Habis" : "Menipis",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    XLSX.utils.book_append_sheet(wb, ws, "Stok Menipis");
+    XLSX.writeFile(wb, `Stok_Menipis_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
+
   // Primary Supplier contribution values
   const supplierVolumeShare = useMemo(() => {
     const raw: Record<string, number> = {};
@@ -421,12 +443,12 @@ export const Dashboard: React.FC = () => {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="space-y-4 md:space-y-6"
+      className="space-y-3 md:space-y-6"
     >
       {/* Modern Dashboard Header Banner */}
       <motion.div
         variants={itemVariants}
-        className="relative bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-5 md:p-8 text-white shadow-lg"
+        className="relative bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-4 md:p-8 text-white shadow-lg"
       >
         <div className="absolute top-0 right-0 h-48 w-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 h-32 w-32 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
@@ -439,24 +461,24 @@ export const Dashboard: React.FC = () => {
             <h1 className="text-xl md:text-3.5xl font-extrabold tracking-tight">
               {greetingText}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-emerald-300">{currentUser?.username || "Staff"}</span>!
             </h1>
-            <p className="text-slate-300/85 text-xs md:text-sm max-w-xl leading-relaxed">
+            <p className="hidden md:block text-slate-300/85 text-xs md:text-sm max-w-xl leading-relaxed">
               Inilah ringkasan aktivitas logistik, indikator stok barang kritis, rincian valuasi investasi aset barang, serta volume transaksi real-time.
             </p>
           </div>
 
           <div className="grid grid-cols-3 gap-2 w-full md:w-auto md:flex md:flex-nowrap md:gap-4 items-center shrink-0">
             {/* Real-time statistics summaries */}
-            <div className="bg-white/5 backdrop-blur-md rounded-xl p-2.5 md:p-3 border border-white/10 text-center min-w-[80px] md:min-w-[110px]">
-              <span className="text-slate-400 text-[9px] md:text-[10px] uppercase font-bold block mb-1">Inbound</span>
-              <span className="text-lg md:text-2xl font-black text-emerald-400 font-mono">+{rangeFlowSummary.totalIn}</span>
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-2 md:p-3 border border-white/10 text-center min-w-[70px] md:min-w-[110px]">
+              <span className="text-slate-400 text-[8px] md:text-[10px] uppercase font-bold block mb-0.5 md:mb-1">Inbound</span>
+              <span className="text-base md:text-2xl font-black text-emerald-400 font-mono">+{rangeFlowSummary.totalIn}</span>
             </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-xl p-2.5 md:p-3 border border-white/10 text-center min-w-[80px] md:min-w-[110px]">
-              <span className="text-slate-400 text-[9px] md:text-[10px] uppercase font-bold block mb-1">Outbound</span>
-              <span className="text-lg md:text-2xl font-black text-rose-400 font-mono">-{rangeFlowSummary.totalOut}</span>
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-2 md:p-3 border border-white/10 text-center min-w-[70px] md:min-w-[110px]">
+              <span className="text-slate-400 text-[8px] md:text-[10px] uppercase font-bold block mb-0.5 md:mb-1">Outbound</span>
+              <span className="text-base md:text-2xl font-black text-rose-400 font-mono">-{rangeFlowSummary.totalOut}</span>
             </div>
-            <div className="bg-white/5 backdrop-blur-md rounded-xl p-2.5 md:p-3 border border-white/10 text-center min-w-[80px] md:min-w-[110px]">
-              <span className="text-slate-400 text-[9px] md:text-[10px] uppercase font-bold block mb-1">Turnover</span>
-              <span className="text-lg md:text-2xl font-black text-indigo-350 font-mono">
+            <div className="bg-white/5 backdrop-blur-md rounded-xl p-2 md:p-3 border border-white/10 text-center min-w-[70px] md:min-w-[110px]">
+              <span className="text-slate-400 text-[8px] md:text-[10px] uppercase font-bold block mb-0.5 md:mb-1">Turnover</span>
+              <span className="text-base md:text-2xl font-black text-indigo-350 font-mono">
                 {totalStock > 0 ? ((rangeFlowSummary.totalOut / (totalStock + rangeFlowSummary.totalOut)) * 100).toFixed(1) + "%" : "0%"}
               </span>
             </div>
@@ -467,10 +489,10 @@ export const Dashboard: React.FC = () => {
       {/* Dashboard Interactive Controller Shelf */}
       <motion.div
         variants={itemVariants}
-        className="flex flex-col md:flex-row justify-between items-start md:items-center p-3 md:p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl gap-3 md:gap-4 shadow-xs"
+        className="flex flex-col md:flex-row justify-between items-start md:items-center p-2.5 md:p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl gap-3 md:gap-4 shadow-xs"
       >
         <div className="flex overflow-x-auto items-center gap-2 w-full md:w-auto pb-1 md:pb-0 whitespace-nowrap scrollbar-hide">
-          <span className="text-[10px] md:text-xs font-bold text-slate-450 uppercase tracking-widest mr-1 font-mono shrink-0">Filter Sektor:</span>
+          <span className="hidden md:inline text-xs font-bold text-slate-450 uppercase tracking-widest mr-1 font-mono shrink-0">Filter Sektor:</span>
           <button
             onClick={() => setSelectedCategory("ALL")}
             className={`px-3 py-1.5 rounded-lg text-[11px] md:text-xs font-bold transition-all shrink-0 ${
@@ -502,7 +524,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0 bg-slate-100 dark:bg-slate-805 p-1 rounded-lg border dark:border-slate-800/40 w-full md:w-auto overflow-x-auto">
-          <span className="text-[9px] md:text-[10px] font-bold py-1 px-2 text-slate-500 uppercase tracking-wide font-mono shrink-0">Rentang Waktu:</span>
+          <span className="hidden md:inline text-[9px] md:text-[10px] font-bold py-1 px-2 text-slate-500 uppercase tracking-wide font-mono shrink-0">Rentang Waktu:</span>
           <button
             onClick={() => setDateRange("7_DAYS")}
             className={`px-3 py-1.5 md:py-1 rounded-md text-[10px] md:text-xs font-bold transition-all shrink-0 ${
@@ -527,12 +549,12 @@ export const Dashboard: React.FC = () => {
       </motion.div>
 
       {/* Bento Grid - 3 Dynamic KPI Cards with micro-visualizers */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {/* Card 2: Total Stok Fisik */}
         <motion.div variants={itemVariants}>
           <Card className="hover:shadow-md transition-all relative overflow-hidden group border-slate-200 dark:border-slate-800/40 h-full">
             <div className="absolute top-0 right-0 h-16 w-16 bg-emerald-500/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
-            <CardContent className="p-5 md:p-6">
+            <CardContent className="p-4 md:p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -564,7 +586,7 @@ export const Dashboard: React.FC = () => {
               : "border-slate-200 dark:border-slate-800/40"
           }`}>
             <div className="absolute top-0 right-0 h-16 w-16 bg-rose-500/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
-            <CardContent className="p-5 md:p-6">
+            <CardContent className="p-4 md:p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -595,10 +617,10 @@ export const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* Card 4: Aliran Log Transaksi */}
-        <motion.div variants={itemVariants}>
+        <motion.div variants={itemVariants} className="col-span-2 lg:col-span-1">
           <Card className="hover:shadow-md transition-all relative overflow-hidden group border-slate-200 dark:border-slate-800/40 h-full">
             <div className="absolute top-0 right-0 h-16 w-16 bg-blue-500/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
-            <CardContent className="p-5 md:p-6">
+            <CardContent className="p-4 md:p-6">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
@@ -648,7 +670,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Bento Grid layout containing Area Chart (Flow), Donut Chart (Categories), and Top valued Items */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
         {/* Area Chart of Flow Transactions */}
         <motion.div variants={itemVariants} className="lg:col-span-2">
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
@@ -823,7 +845,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Bento Grid Part 2: Top Products Bar Chart, Watchlist Supplier, and Critical Stock list */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
         {/* Top Products Bar Chart with valuation/stock toggle */}
         <motion.div variants={itemVariants} className="lg:col-span-2">
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
@@ -860,7 +882,7 @@ export const Dashboard: React.FC = () => {
                 </button>
               </div>
             </CardHeader>
-            <CardContent className="flex-1 p-6 pt-0 flex items-center min-h-[290px]">
+            <CardContent className="flex-1 p-2 md:p-6 pt-0 flex items-center min-h-[290px]">
               {topBarData.length === 0 ? (
                 <div className="text-center py-16 text-slate-400 text-xs flex flex-col items-center justify-center w-full">
                   <ShoppingBag className="w-10 h-10 mb-2 opacity-15 stroke-1" />
@@ -941,14 +963,14 @@ export const Dashboard: React.FC = () => {
                 Porsi penyerapan kontribusi unit stok barang per mitra
               </p>
             </CardHeader>
-            <CardContent className="flex-1 p-6 pt-0 flex flex-col justify-between">
+            <CardContent className="flex-1 p-4 md:p-6 pt-0 flex flex-col justify-between">
               {supplierVolumeShare.length === 0 ? (
                 <div className="text-center py-16 text-slate-400 text-xs flex flex-col items-center justify-center h-[200px]">
                   <Truck className="w-10 h-10 mb-2 opacity-15 stroke-1" />
                   Belum ada supplier yang terintegrasi.
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {supplierVolumeShare.map((sup, idx) => {
                     const totalVolumeSum = supplierVolumeShare.reduce((a, b) => a + b.value, 0);
                     const pct = totalVolumeSum > 0 ? (sup.value / totalVolumeSum) * 100 : 0;
@@ -992,7 +1014,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Operational Shelf: Live recent transactional timeline, critical checklist panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
         {/* Watchlist: Critical Stock Alert list */}
         <motion.div variants={itemVariants}>
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
@@ -1005,28 +1027,40 @@ export const Dashboard: React.FC = () => {
                   </span>
                   Stok Menipis Realtime
                 </span>
-                <span className="px-2 py-0.5 bg-red-100 dark:bg-red-950/40 text-red-750 dark:text-red-400 rounded-md text-[10px] font-bold font-mono">
-                  {criticalItemsList.length} Item
-                </span>
+                <div className="flex items-center gap-2">
+                  {criticalItemsList.length > 0 && (
+                    <button 
+                      onClick={handleExportCriticalStock}
+                      title="Export ke Excel"
+                      className="p-1 rounded bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <span className="px-2 py-0.5 bg-red-100 dark:bg-red-950/40 text-red-750 dark:text-red-400 rounded-md text-[10px] font-bold font-mono">
+                    {criticalItemsList.length} Item
+                  </span>
+                </div>
               </CardTitle>
               <p className="text-[10px] md:text-xs text-slate-450 mt-1">
                 Daftar barang di bawah tingkat minimal yang memerlukan restok segera.
               </p>
             </CardHeader>
-            <CardContent className="flex-1 p-4 md:p-6 pt-0 flex flex-col justify-between">
+            <CardContent className="flex-1 p-3 md:p-6 pt-0 flex flex-col justify-between">
               {criticalItemsList.length === 0 ? (
                 <div className="text-center py-16 text-slate-400 text-xs flex flex-col items-center justify-center md:h-[220px]">
                   <CheckCircle2 className="w-10 h-10 mb-2 text-emerald-500 opacity-70" />
                   Semua stok produk gudang dalam batas aman.
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 md:space-y-3">
                   {criticalItemsList.map((item) => {
                     const progressVal = item.stock <= 0 ? 0 : (item.stock / (item.minStock || 5)) * 100;
                     return (
                       <div
                         key={item.id}
-                        className="p-3 bg-red-500/5 dark:bg-red-900/10 border border-red-200/50 dark:border-red-900/30 rounded-xl flex gap-3 text-xs"
+                        onClick={() => setSelectedCriticalItem(item)}
+                        className="p-3 bg-red-500/5 dark:bg-red-900/10 border border-red-200/50 dark:border-red-900/30 rounded-xl flex gap-3 text-xs cursor-pointer hover:bg-red-500/10 dark:hover:bg-red-900/20 transition-colors"
                       >
                         <div className="p-2 self-start bg-red-100 dark:bg-red-955 text-rose-600 rounded-lg shrink-0">
                           <AlertTriangle className="w-4 h-4 text-center shrink-0 animate-pulse" />
@@ -1083,13 +1117,13 @@ export const Dashboard: React.FC = () => {
                   Belum ada transaksi logistik terekam.
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 md:space-y-3">
                   {recentTransactionsCompact.map((t) => {
                     const isIn = t.type === "IN";
                     return (
                       <div
                         key={t.id}
-                        className="flex items-center justify-between p-3.5 border border-slate-100 dark:border-slate-850 bg-slate-50/25 dark:bg-slate-900/20 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl gap-4 transition-colors"
+                        className="flex items-center justify-between p-2.5 md:p-3.5 border border-slate-100 dark:border-slate-850 bg-slate-50/25 dark:bg-slate-900/20 hover:bg-slate-50 dark:hover:bg-slate-900/40 rounded-xl gap-2 md:gap-4 transition-colors"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className={`p-2.5 rounded-xl shrink-0 ${
@@ -1143,6 +1177,81 @@ export const Dashboard: React.FC = () => {
           </Card>
         </motion.div>
       </div>
+
+      <AnimatePresence>
+        {selectedCriticalItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-md overflow-hidden relative"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+              <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start">
+                <div className="flex gap-3 items-center">
+                  <div className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800 dark:text-white">Detail Stok Menipis</h3>
+                    <p className="text-xs text-slate-500">Informasi barang yang perlu segera direstok</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedCriticalItem(null)}
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-5 space-y-4">
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Nama Barang</p>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 text-lg">{selectedCriticalItem.name}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-xs text-slate-500 mb-1">SKU</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200 font-mono">{selectedCriticalItem.sku || "-"}</p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-xs text-slate-500 mb-1">Kategori</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                      {data.categories.find(c => c.id === selectedCriticalItem.categoryId)?.name || "-"}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-xl border border-red-100 dark:border-red-900/30">
+                    <p className="text-xs text-red-600/70 dark:text-red-400/70 mb-1">Stok Saat Ini</p>
+                    <p className="font-black text-red-600 dark:text-red-400 text-xl font-mono">{selectedCriticalItem.stock}</p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-xs text-slate-500 mb-1">Batas Minimal</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200 text-xl font-mono">
+                      {selectedCriticalItem.minStock !== undefined ? selectedCriticalItem.minStock : 5}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                <Button 
+                  onClick={() => setSelectedCriticalItem(null)}
+                  className="bg-slate-800 hover:bg-slate-700 text-white"
+                >
+                  Tutup
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
