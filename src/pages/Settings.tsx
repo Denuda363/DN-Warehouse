@@ -62,7 +62,7 @@ export const Settings: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `gudangsync_backup_${new Date().toISOString().split("T")[0]}.json`;
+    a.download = `dn-gudang_backup_${new Date().toISOString().split("T")[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -80,11 +80,18 @@ export const Settings: React.FC = () => {
         const parsed = JSON.parse(event.target?.result as string);
         if (parsed && parsed.items && parsed.users) {
           if (confirm("Restore akan menimpa semua data saat ini. Lanjutkan?")) {
+            if (currentUser) {
+              const newLog = {
+                id: "log-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+                userId: currentUser.id,
+                username: currentUser.username,
+                action: "Restore Data",
+                details: "Memulihkan data aplikasi dari file backup",
+                timestamp: new Date().toISOString(),
+              };
+              parsed.activityLogs = [newLog, ...(parsed.activityLogs || [])].slice(0, 1000);
+            }
             resetData(parsed);
-            logActivity(
-              "Restore Data",
-              "Memulihkan data aplikasi dari file backup",
-            );
             alert("Restore berhasil!");
           }
         } else {

@@ -357,7 +357,7 @@ export const Layout: React.FC<{
             )}
             {sidebarOpen && (
               <span className="ml-3 font-bold text-sm tracking-widest uppercase transition-opacity">
-                {data.warehouseProfile?.name || "ROUNDS"}
+                {data.warehouseProfile?.name || "DN-Gudang"}
               </span>
             )}
           </div>
@@ -554,7 +554,7 @@ export const Layout: React.FC<{
                   </div>
                 )}
                 <span className="ml-3 font-bold text-sm tracking-widest uppercase hidden sm:block">
-                  {data.warehouseProfile?.name || "ROUNDS"}
+                  {data.warehouseProfile?.name || "DN-Gudang"}
                 </span>
               </div>
 

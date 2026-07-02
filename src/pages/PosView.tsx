@@ -588,7 +588,7 @@ export const PosView: React.FC = () => {
     
     // Header
     doc.setFontSize(20);
-    doc.text(profile?.name || 'GudangSync', 14, 20);
+    doc.text(profile?.name || 'DN-Gudang', 14, 20);
     doc.setFontSize(10);
     doc.text(profile?.address || 'Alamat tidak tersedia', 14, 28);
     doc.text(profile?.phone || 'Telepon tidak tersedia', 14, 34);
