@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import { useAppContext } from "../store/AppContext";
 import {
   Card,
@@ -67,7 +68,50 @@ export const Settings: React.FC = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    logActivity("Backup Data", "Mengunduh file backup aplikasi");
+    logActivity("Backup Data", "Mengunduh file backup aplikasi (JSON)");
+  };
+
+  const handleBackupExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    const itemsWs = XLSX.utils.json_to_sheet(data.items.map(item => ({
+      ID: item.id,
+      SKU: item.sku,
+      Nama: item.name,
+      KategoriID: item.categoryId,
+      SatuanID: item.unitId,
+      Stok: item.stock,
+      MinStok: item.minStock || 0,
+      HargaJual: item.sellingPrice || 0,
+      SupplierID: item.supplierId || "",
+    })));
+    XLSX.utils.book_append_sheet(wb, itemsWs, "Barang");
+
+    const categoriesWs = XLSX.utils.json_to_sheet(data.categories.map(c => ({ ID: c.id, Nama: c.name })));
+    XLSX.utils.book_append_sheet(wb, categoriesWs, "Kategori");
+
+    const unitsWs = XLSX.utils.json_to_sheet(data.units.map(u => ({ ID: u.id, Nama: u.name })));
+    XLSX.utils.book_append_sheet(wb, unitsWs, "Satuan");
+
+    const suppliersWs = XLSX.utils.json_to_sheet(data.suppliers.map(s => ({ ID: s.id, Nama: s.name, Kontak: s.contact })));
+    XLSX.utils.book_append_sheet(wb, suppliersWs, "Supplier");
+
+    const transactionsWs = XLSX.utils.json_to_sheet(data.transactions.map(t => ({
+      ID: t.id,
+      Tanggal: t.date,
+      Tipe: t.type,
+      BarangID: t.itemId,
+      Qty: t.qty,
+      Catatan: t.notes,
+      UserID: t.userId
+    })));
+    XLSX.utils.book_append_sheet(wb, transactionsWs, "Transaksi");
+
+    const usersWs = XLSX.utils.json_to_sheet(data.users.map(u => ({ ID: u.id, Username: u.username, Role: u.role })));
+    XLSX.utils.book_append_sheet(wb, usersWs, "Pengguna");
+
+    XLSX.writeFile(wb, `dn-gudang_backup_${new Date().toISOString().split("T")[0]}.xlsx`);
+    logActivity("Backup Data Excel", "Mengunduh file backup aplikasi (Excel)");
   };
 
   const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,6 +148,105 @@ export const Settings: React.FC = () => {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleRestoreExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const dataStr = event.target?.result;
+        const wb = XLSX.read(dataStr, { type: "array" });
+        
+        const restoredData: any = { ...data };
+        
+        if (wb.SheetNames.includes("Barang")) {
+          const itemsRaw = XLSX.utils.sheet_to_json<any>(wb.Sheets["Barang"]);
+          restoredData.items = itemsRaw.map((row: any) => ({
+            id: String(row.ID || row.id || ""),
+            sku: String(row.SKU || row.sku || ""),
+            name: String(row.Nama || row.name || ""),
+            categoryId: String(row.KategoriID || row.categoryId || ""),
+            unitId: String(row.SatuanID || row.unitId || ""),
+            stock: Number(row.Stok || row.stock) || 0,
+            minStock: Number(row.MinStok || row.minStock) || 0,
+            sellingPrice: Number(row.HargaJual || row.sellingPrice) || 0,
+            supplierId: row.SupplierID ? String(row.SupplierID) : (row.supplierId ? String(row.supplierId) : ""),
+          }));
+        }
+
+        if (wb.SheetNames.includes("Kategori")) {
+          const catRaw = XLSX.utils.sheet_to_json<any>(wb.Sheets["Kategori"]);
+          restoredData.categories = catRaw.map((row: any) => ({
+            id: String(row.ID || row.id || ""),
+            name: String(row.Nama || row.name || ""),
+          }));
+        }
+
+        if (wb.SheetNames.includes("Satuan")) {
+          const unitRaw = XLSX.utils.sheet_to_json<any>(wb.Sheets["Satuan"]);
+          restoredData.units = unitRaw.map((row: any) => ({
+            id: String(row.ID || row.id || ""),
+            name: String(row.Nama || row.name || ""),
+          }));
+        }
+
+        if (wb.SheetNames.includes("Supplier")) {
+          const supRaw = XLSX.utils.sheet_to_json<any>(wb.Sheets["Supplier"]);
+          restoredData.suppliers = supRaw.map((row: any) => ({
+            id: String(row.ID || row.id || ""),
+            name: String(row.Nama || row.name || ""),
+            contact: String(row.Kontak || row.contact || ""),
+          }));
+        }
+
+        if (wb.SheetNames.includes("Transaksi")) {
+          const transRaw = XLSX.utils.sheet_to_json<any>(wb.Sheets["Transaksi"]);
+          restoredData.transactions = transRaw.map((row: any) => ({
+            id: String(row.ID || row.id || ""),
+            date: String(row.Tanggal || row.date || ""),
+            type: String(row.Tipe || row.type || ""),
+            itemId: String(row.BarangID || row.itemId || ""),
+            qty: Number(row.Qty || row.qty) || 0,
+            notes: String(row.Catatan || row.notes || ""),
+            userId: String(row.UserID || row.userId || ""),
+          }));
+        }
+
+        if (wb.SheetNames.includes("Pengguna")) {
+          const usersRaw = XLSX.utils.sheet_to_json<any>(wb.Sheets["Pengguna"]);
+          restoredData.users = usersRaw.map((row: any) => ({
+            id: String(row.ID || row.id || ""),
+            username: String(row.Username || row.username || ""),
+            role: String(row.Role || row.role || "STAFF"),
+          }));
+        }
+
+        if (confirm("Restore dari Excel akan menimpa data (Barang, Kategori, Satuan, Supplier, Transaksi, Pengguna) sesuai dengan sheet yang ada. Lanjutkan?")) {
+          if (currentUser) {
+            const newLog = {
+              id: "log-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+              userId: currentUser.id,
+              username: currentUser.username,
+              action: "Restore Data Excel",
+              details: "Memulihkan data aplikasi dari file backup Excel",
+              timestamp: new Date().toISOString(),
+            };
+            restoredData.activityLogs = [newLog, ...(restoredData.activityLogs || [])].slice(0, 1000);
+          }
+          resetData(restoredData);
+          alert("Restore dari Excel berhasil!");
+        }
+      } catch (error) {
+        console.error("Excel restore error", error);
+        alert("Gagal membaca file Excel. Pastikan format sesuai.");
+      } finally {
+        e.target.value = "";
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const colors = [
@@ -459,20 +602,40 @@ export const Settings: React.FC = () => {
               <CardContent className="space-y-4">
                 <Button
                   onClick={handleBackup}
-                  className="w-full mb-2 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  className="w-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   <Download className="w-4 h-4 mr-2" /> Backup Data (JSON)
                 </Button>
 
-                <div className="relative">
+                <Button
+                  onClick={handleBackupExcel}
+                  className="w-full mb-2 bg-emerald-600 text-white hover:bg-emerald-700 border-none shadow-sm"
+                >
+                  <Download className="w-4 h-4 mr-2" /> Backup Data (Excel)
+                </Button>
+
+                <div className="relative mb-2">
                   <Button className="w-full relative bg-slate-900 text-slate-50 hover:bg-slate-800 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-200">
-                    <Upload className="w-4 h-4 mr-2" /> Restore Data
+                    <Upload className="w-4 h-4 mr-2" /> Restore Data (JSON)
                     <input
-                      title="Restore data"
+                      title="Restore data JSON"
                       type="file"
                       accept="application/json"
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       onChange={handleRestore}
+                    />
+                  </Button>
+                </div>
+
+                <div className="relative">
+                  <Button className="w-full relative bg-emerald-700 text-white hover:bg-emerald-800 border-none shadow-sm">
+                    <Upload className="w-4 h-4 mr-2" /> Restore Data (Excel)
+                    <input
+                      title="Restore data Excel"
+                      type="file"
+                      accept=".xlsx, .xls"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={handleRestoreExcel}
                     />
                   </Button>
                 </div>
