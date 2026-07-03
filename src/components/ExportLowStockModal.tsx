@@ -49,6 +49,8 @@ export const ExportLowStockModal: React.FC<ExportLowStockModalProps> = ({ isOpen
     { id: '3', field: 'stock', customHeader: 'Stok' },
     { id: '4', field: 'minStock', customHeader: 'Min. Stok' },
     { id: '5', field: 'unit', customHeader: 'Satuan' },
+    { id: '6', field: 'supplier', customHeader: 'Supplier Utama' },
+    { id: '7', field: 'altSupplier', customHeader: 'Supplier Alternatif' },
   ]);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set(lowStockItems.map(i => i.id)));
 

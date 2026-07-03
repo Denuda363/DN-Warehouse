@@ -390,6 +390,8 @@ export const Dashboard: React.FC = () => {
       Stok_Minimal: item.minStock !== undefined ? item.minStock : 5,
       Kategori: data.categories.find(c => c.id === item.categoryId)?.name || "-",
       Harga_Jual: item.sellingPrice || 0,
+      Supplier_Utama: getSupplierName(item.supplierId),
+      Supplier_Alternatif: item.altSupplierId ? getSupplierName(item.altSupplierId) : "-",
       Status: item.stock <= 0 ? "Habis" : "Menipis",
     }));
 
@@ -1236,6 +1238,20 @@ export const Dashboard: React.FC = () => {
                     <p className="text-xs text-slate-500 mb-1">Batas Minimal</p>
                     <p className="font-bold text-slate-800 dark:text-slate-200 text-xl font-mono">
                       {selectedCriticalItem.minStock !== undefined ? selectedCriticalItem.minStock : 5}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-xs text-slate-500 mb-1">Supplier Utama</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200 truncate" title={getSupplierName(selectedCriticalItem.supplierId)}>
+                      {getSupplierName(selectedCriticalItem.supplierId)}
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <p className="text-xs text-slate-500 mb-1">Supplier Alternatif</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200 truncate" title={selectedCriticalItem.altSupplierId ? getSupplierName(selectedCriticalItem.altSupplierId) : "-"}>
+                      {selectedCriticalItem.altSupplierId ? getSupplierName(selectedCriticalItem.altSupplierId) : "-"}
                     </p>
                   </div>
                 </div>
