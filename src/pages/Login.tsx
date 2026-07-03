@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { motion } from "motion/react";
 import { useAppContext } from "../store/AppContext";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
@@ -86,10 +85,7 @@ export const Login: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
     <div className="min-h-screen flex items-center justify-center bg-slate-950 font-sans">
       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2000')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+      <div
         className="relative z-10 w-full max-w-md p-8 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl"
       >
         <div className="flex flex-col items-center mb-8">
@@ -186,7 +182,7 @@ export const Login: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
             </>
           )}
         </Button>
-      </motion.div>
+      </div>
     </div>
   );
 };

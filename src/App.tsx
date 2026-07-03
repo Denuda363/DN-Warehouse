@@ -84,6 +84,28 @@ function AppContent() {
   }
 
   const renderPage = () => {
+    if (currentUser?.role !== "ADMIN") {
+      const menus = [
+        { path: "dashboard", perm: "VIEW_DASHBOARD" },
+        { path: "inbound", perm: "ACCESS_PURCHASE" },
+        { path: "outbound", perm: "ACCESS_POS" },
+        { path: "report", perm: "VIEW_REPORTS" },
+        { path: "master", perm: "MANAGE_MASTER" },
+        { path: "settings", perm: "MANAGE_USERS" },
+      ];
+      const currentMenu = menus.find((m) => m.path === currentPath);
+      if (currentMenu && !(currentUser?.permissions || []).includes(currentMenu.perm)) {
+        return (
+          <div className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-8">
+            <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-xl p-8 shadow-sm border border-slate-200 dark:border-slate-700 text-center">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Akses Ditolak</h2>
+              <p className="text-slate-500 dark:text-slate-400">Anda tidak memiliki izin untuk melihat halaman ini.</p>
+            </div>
+          </div>
+        );
+      }
+    }
+
     switch (currentPath) {
       case "dashboard":
         return <Dashboard />;

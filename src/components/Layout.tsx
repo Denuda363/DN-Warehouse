@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { useAppContext } from "../store/AppContext";
 import { ClockWidget } from "./ClockWidget";
 import { Button } from "./ui/Button";
@@ -690,24 +689,17 @@ export const Layout: React.FC<{
       </div>
 
       {/* Floating Notification Drawer Panel */}
-      <AnimatePresence>
+      
         {showNotifications && (
           <>
             {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <div
               onClick={() => setShowNotifications(false)}
               className="fixed inset-0 bg-slate-950/60 backdrop-blur-[2px] z-50 transition-opacity"
             />
 
             {/* Drawer */}
-            <motion.div
-              initial={{ x: "100%", opacity: 0.95 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "100%", opacity: 0.95 }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+            <div
               className="fixed top-0 right-0 h-full w-full max-w-sm sm:max-w-md bg-white dark:bg-slate-900 shadow-2xl z-50 flex flex-col border-l border-slate-200 dark:border-slate-800"
             >
               {/* Header */}
@@ -1037,30 +1029,23 @@ export const Layout: React.FC<{
                   Tutup Panel
                 </Button>
               </div>
-            </motion.div>
+            </div>
           </>
         )}
-      </AnimatePresence>
+      
 
       {/* Detail Overlay Dialog Modal */}
-      <AnimatePresence>
+      
         {activeDetail && (
           <>
             {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <div
               onClick={() => setActiveDetail(null)}
               className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[100] transition-all"
             />
 
             {/* Modal Card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            <div
               className="fixed inset-x-4 top-[10%] max-w-lg mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl z-[101] overflow-hidden flex flex-col focus:outline-none"
             >
               {/* Header */}
@@ -1285,10 +1270,10 @@ export const Layout: React.FC<{
                   Selesai Meninjau
                 </Button>
               </div>
-            </motion.div>
+            </div>
           </>
         )}
-      </AnimatePresence>
+      
 
       <ExportLowStockModal 
         isOpen={isExportModalOpen}

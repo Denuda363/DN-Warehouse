@@ -44,7 +44,6 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { motion, AnimatePresence } from "motion/react";
 import * as XLSX from "xlsx";
 
 const COLORS = [
@@ -441,15 +440,15 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
+    <div
+      
       initial="hidden"
       animate="show"
       className="space-y-3 md:space-y-6"
     >
       {/* Modern Dashboard Header Banner */}
-      <motion.div
-        variants={itemVariants}
+      <div
+        
         className="relative bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-4 md:p-8 text-white shadow-lg"
       >
         <div className="absolute top-0 right-0 h-48 w-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -486,11 +485,11 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Dashboard Interactive Controller Shelf */}
-      <motion.div
-        variants={itemVariants}
+      <div
+        
         className="flex flex-col md:flex-row justify-between items-start md:items-center p-2.5 md:p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl gap-3 md:gap-4 shadow-xs"
       >
         <div className="flex overflow-x-auto items-center gap-2 w-full md:w-auto pb-1 md:pb-0 whitespace-nowrap scrollbar-hide">
@@ -548,12 +547,12 @@ export const Dashboard: React.FC = () => {
             30 Hari
           </button>
         </div>
-      </motion.div>
+      </div>
 
       {/* Bento Grid - 3 Dynamic KPI Cards with micro-visualizers */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {/* Card 2: Total Stok Fisik */}
-        <motion.div variants={itemVariants}>
+        <div >
           <Card className="hover:shadow-md transition-all relative overflow-hidden group border-slate-200 dark:border-slate-800/40 h-full">
             <div className="absolute top-0 right-0 h-16 w-16 bg-emerald-500/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
             <CardContent className="p-4 md:p-6">
@@ -578,10 +577,10 @@ export const Dashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Card 3: Stok Kritis Alert */}
-        <motion.div variants={itemVariants}>
+        <div >
           <Card className={`hover:shadow-md transition-all relative overflow-hidden group h-full border ${
             lowStockCount > 0 
               ? "border-red-200 dark:border-red-950 bg-red-50/15 dark:bg-red-950/5" 
@@ -616,10 +615,10 @@ export const Dashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Card 4: Aliran Log Transaksi */}
-        <motion.div variants={itemVariants} className="col-span-2 lg:col-span-1">
+        <div  className="col-span-2 lg:col-span-1">
           <Card className="hover:shadow-md transition-all relative overflow-hidden group border-slate-200 dark:border-slate-800/40 h-full">
             <div className="absolute top-0 right-0 h-16 w-16 bg-blue-500/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
             <CardContent className="p-4 md:p-6">
@@ -644,12 +643,12 @@ export const Dashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
 
       {/* Smart Notifications Box Widget */}
       {smartAlerts.length > 0 && (
-        <motion.div variants={itemVariants}>
+        <div >
           <div className="bg-gradient-to-r from-amber-500/5 to-orange-500/5 border border-amber-550/20 dark:border-amber-900/30 rounded-2xl p-3 md:p-4 flex gap-3 md:gap-4 items-start shadow-xs">
             <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
               <Bell className="w-4 h-4 md:w-5 md:h-5 animate-bounce" />
@@ -668,13 +667,13 @@ export const Dashboard: React.FC = () => {
               </ul>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Bento Grid layout containing Area Chart (Flow), Donut Chart (Categories), and Top valued Items */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
         {/* Area Chart of Flow Transactions */}
-        <motion.div variants={itemVariants} className="lg:col-span-2">
+        <div  className="lg:col-span-2">
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 gap-3 shrink-0 px-4 pt-4 md:px-6 md:pt-6">
               <div>
@@ -754,10 +753,10 @@ export const Dashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Donut Chart Rasio Porsi Kategori */}
-        <motion.div variants={itemVariants}>
+        <div >
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
             <CardHeader className="pb-2 shrink-0 px-4 pt-4 md:px-6 md:pt-6">
               <CardTitle className="text-sm md:text-base font-bold text-slate-800 dark:text-white">
@@ -843,13 +842,13 @@ export const Dashboard: React.FC = () => {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
 
       {/* Bento Grid Part 2: Top Products Bar Chart, Watchlist Supplier, and Critical Stock list */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
         {/* Top Products Bar Chart with valuation/stock toggle */}
-        <motion.div variants={itemVariants} className="lg:col-span-2">
+        <div  className="lg:col-span-2">
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 gap-3 shrink-0 px-4 pt-4 md:px-6 md:pt-6">
               <div>
@@ -952,10 +951,10 @@ export const Dashboard: React.FC = () => {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Top Suppliers Contribution Share Watchlist */}
-        <motion.div variants={itemVariants}>
+        <div >
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
             <CardHeader className="pb-3 shrink-0">
               <CardTitle className="text-base font-bold text-slate-805 dark:text-white flex items-center gap-2">
@@ -1012,13 +1011,13 @@ export const Dashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
 
       {/* Operational Shelf: Live recent transactional timeline, critical checklist panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-6">
         {/* Watchlist: Critical Stock Alert list */}
-        <motion.div variants={itemVariants}>
+        <div >
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
             <CardHeader className="pb-3 shrink-0 px-4 pt-4 md:px-6 md:pt-6">
               <CardTitle className="text-sm md:text-base font-bold text-slate-805 dark:text-white flex items-center justify-between">
@@ -1096,10 +1095,10 @@ export const Dashboard: React.FC = () => {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Live Outbound/Inbound compact Flow timeline */}
-        <motion.div variants={itemVariants} className="lg:col-span-2">
+        <div  className="lg:col-span-2">
           <Card className="hover:shadow-xs transition-all h-full flex flex-col border-slate-200 dark:border-slate-800">
             <CardHeader className="pb-3 shrink-0 px-4 pt-4 md:px-6 md:pt-6">
               <CardTitle className="text-sm md:text-base font-bold text-slate-805 dark:text-white flex items-center justify-between">
@@ -1177,21 +1176,15 @@ export const Dashboard: React.FC = () => {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       </div>
 
-      <AnimatePresence>
+      
         {selectedCriticalItem && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+            <div
               className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-md overflow-hidden relative"
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
@@ -1264,10 +1257,10 @@ export const Dashboard: React.FC = () => {
                   Tutup
                 </Button>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+      
+    </div>
   );
 };

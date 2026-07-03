@@ -107,7 +107,13 @@ export const Settings: React.FC = () => {
     })));
     XLSX.utils.book_append_sheet(wb, transactionsWs, "Transaksi");
 
-    const usersWs = XLSX.utils.json_to_sheet(data.users.map(u => ({ ID: u.id, Username: u.username, Role: u.role })));
+    const usersWs = XLSX.utils.json_to_sheet(data.users.map(u => ({ 
+      ID: u.id, 
+      Username: u.username, 
+      Role: u.role,
+      Permissions: (u.permissions || []).join(","),
+      AllowedCategoryIds: (u.allowedCategoryIds || []).join(",")
+    })));
     XLSX.utils.book_append_sheet(wb, usersWs, "Pengguna");
 
     XLSX.writeFile(wb, `dn-gudang_backup_${new Date().toISOString().split("T")[0]}.xlsx`);
@@ -221,6 +227,9 @@ export const Settings: React.FC = () => {
             id: String(row.ID || row.id || ""),
             username: String(row.Username || row.username || ""),
             role: String(row.Role || row.role || "STAFF"),
+            permissions: (row.Permissions || "").split(",").filter(Boolean),
+            allowedCategoryIds: (row.AllowedCategoryIds || "").split(",").filter(Boolean),
+            password: data.users.find(u => u.id === String(row.ID || row.id))?.password // Preserve password
           }));
         }
 

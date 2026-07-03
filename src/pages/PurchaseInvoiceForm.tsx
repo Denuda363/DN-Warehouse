@@ -19,7 +19,6 @@ import {
   Search,
 } from "lucide-react";
 import { Item } from "../types";
-import { motion, AnimatePresence } from "motion/react";
 
 function adjustItemStock(item: Item, batchNo: string | undefined, expDate: string | undefined, changeQty: number): Item {
   const normBatchNo = batchNo ? batchNo.trim() : "";
@@ -612,9 +611,7 @@ export const PurchaseInvoiceForm: React.FC<{
     <div className="space-y-6 pb-8">
       {/* Alert Header */}
       {success && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+        <div
           className="p-4 rounded-xl bg-emerald-600 border border-emerald-500 text-white flex items-center shadow-lg shadow-emerald-500/20 font-bold mb-6"
         >
           <CheckCircle2 className="w-5 h-5 mr-3 text-white shrink-0 animate-bounce" />
@@ -622,18 +619,15 @@ export const PurchaseInvoiceForm: React.FC<{
             Faktur pembelian di antrian berhasil diproses dan disimpan ke
             database!
           </span>
-        </motion.div>
+        </div>
       )}
 
       {/* Main Grid Layout to support batch multi draft sidebar queue */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Left Side: Draft Queue Sidebar Panel */}
-        <AnimatePresence>
+        
           {!editInvoiceId && sidebarOpen && (
-            <motion.div
-              initial={{ opacity: 0, x: -15, width: 0 }}
-              animate={{ opacity: 1, x: 0, width: "auto" }}
-              exit={{ opacity: 0, x: -15, width: 0 }}
+            <div
               className="lg:col-span-1 space-y-4 overflow-hidden"
             >
               <div className="flex items-center justify-between">
@@ -682,11 +676,8 @@ export const PurchaseInvoiceForm: React.FC<{
                     const totalItems = dr.items.length;
                     const hasItems = totalItems > 0;
                     return (
-                      <motion.div
+                      <div
                         key={dr.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.03 }}
                         onClick={() => setActiveDraftId(dr.id)}
                         className={`group cursor-pointer p-3.5 rounded-xl border relative transition-all flex flex-col justify-between ${
                           isActive
@@ -739,7 +730,7 @@ export const PurchaseInvoiceForm: React.FC<{
                           </span>
                           <span className="font-medium">{dr.invoiceDate}</span>
                         </div>
-                      </motion.div>
+                      </div>
                     );
                   })
                 )}
@@ -766,9 +757,9 @@ export const PurchaseInvoiceForm: React.FC<{
                   {drafts.filter((d) => d.items.length > 0).length} Faktur Masuk
                 </Button>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        
 
         {/* Right Side: Active Draft Editor Form */}
         <div
@@ -791,10 +782,8 @@ export const PurchaseInvoiceForm: React.FC<{
           )}
 
           {activeDraft ? (
-            <motion.div
+            <div
               layout
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
               className="space-y-6"
             >
               {/* Shorthand / Browser-like tabs row for active invoices queue when simple/spacious mode is active */}
@@ -1179,11 +1168,8 @@ export const PurchaseInvoiceForm: React.FC<{
                         </div>
                       ) : (
                         activeDraft.items.map((item, index) => (
-                          <motion.div
+                          <div
                             key={item.id}
-                            initial={{ opacity: 0, y: 4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.02 }}
                             className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20 grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4"
                           >
                             <div className="md:col-span-4 flex justify-between items-start md:block">
@@ -1275,7 +1261,7 @@ export const PurchaseInvoiceForm: React.FC<{
                                 <Trash2 className="w-4 h-4 mx-auto" />
                               </button>
                             </div>
-                          </motion.div>
+                          </div>
                         ))
                       )}
                     </div>
@@ -1318,7 +1304,7 @@ export const PurchaseInvoiceForm: React.FC<{
                   )}
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ) : (
             <div className="py-24 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/10">
               <Layers className="w-12 h-12 text-slate-300 mb-3" />

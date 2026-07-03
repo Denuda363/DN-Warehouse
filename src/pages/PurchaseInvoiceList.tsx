@@ -279,7 +279,7 @@ export const PurchaseInvoiceList: React.FC<{
     currentUser?.role !== "ADMIN" && currentUserCategories.length > 0;
 
   const filteredInvoices =
-    data.purchaseInvoices?.filter((inv) => {
+    (data.purchaseInvoices || []).filter((inv) => {
       if (startDate && inv.invoiceDate.substring(0, 10) < startDate)
         return false;
       if (endDate && inv.invoiceDate.substring(0, 10) > endDate) return false;
