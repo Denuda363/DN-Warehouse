@@ -30,7 +30,7 @@ export const Settings: React.FC = () => {
   const [pinInput, setPinInput] = useState("");
   const DEFAULT_PIN = "123456";
 
-  const handleResetApp = () => {
+  const handleResetApp = async () => {
     if (pinInput !== DEFAULT_PIN) {
       alert("PIN salah.");
       return;
@@ -51,7 +51,7 @@ export const Settings: React.FC = () => {
          navStyle: "sidebar" as "sidebar" | "topbar" | "bottombar",
          mobileNavStyle: "bottombar" as "sidebar" | "topbar" | "bottombar",
        };
-       resetData(initialData as any);
+       await resetData(initialData as any);
        alert("Reset data berhasil!");
        setPinInput("");
     }
@@ -125,7 +125,7 @@ export const Settings: React.FC = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const parsed = JSON.parse(event.target?.result as string);
         if (parsed && parsed.items && parsed.users) {
@@ -141,14 +141,14 @@ export const Settings: React.FC = () => {
               };
               parsed.activityLogs = [newLog, ...(parsed.activityLogs || [])].slice(0, 1000);
             }
-            resetData(parsed);
+            await resetData(parsed);
             alert("Restore berhasil!");
           }
         } else {
           alert("Format file backup tidak valid.");
         }
       } catch (error) {
-        alert("Gagal membaca file JSON.");
+        alert("Gagal melakukan restore. Pastikan file valid.");
       } finally {
         e.target.value = "";
       }
@@ -161,7 +161,7 @@ export const Settings: React.FC = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const dataStr = event.target?.result;
         const wb = XLSX.read(dataStr, { type: "array" });
@@ -229,7 +229,7 @@ export const Settings: React.FC = () => {
             role: String(row.Role || row.role || "STAFF"),
             permissions: (row.Permissions || "").split(",").filter(Boolean),
             allowedCategoryIds: (row.AllowedCategoryIds || "").split(",").filter(Boolean),
-            password: data.users.find(u => u.id === String(row.ID || row.id))?.password // Preserve password
+            password: data.users.find(u => u.id === String(row.ID || row.id))?.password || "", // Preserve password
           }));
         }
 
@@ -245,7 +245,7 @@ export const Settings: React.FC = () => {
             };
             restoredData.activityLogs = [newLog, ...(restoredData.activityLogs || [])].slice(0, 1000);
           }
-          resetData(restoredData);
+          await resetData(restoredData);
           alert("Restore dari Excel berhasil!");
         }
       } catch (error) {

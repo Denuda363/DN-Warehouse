@@ -25,7 +25,7 @@ export const Login: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const user = data.users.find(
+    const user = (data.users || []).find(
       (u) => u.username === username && u.password === password,
     );
     if (user) {
@@ -48,11 +48,11 @@ export const Login: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
 
       if (!email) throw new Error("No email returned from Google");
 
-      let existingUser = data.users.find((u) => u.username === email);
+      let existingUser = (data.users || []).find((u) => u.username === email);
       
       if (!existingUser) {
         // If it's the very first user logging in, make them ADMIN, else STAFF
-        const isFirstUser = data.users.length === 0 || (data.users.length === 1 && data.users[0].username === "admin");
+        const isFirstUser = (data.users || []).length === 0 || ((data.users || []).length === 1 && (data.users || [])[0].username === "admin");
         
         const newUser = {
           id: result.user.uid,
@@ -64,7 +64,7 @@ export const Login: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
         };
         
         // Remove dummy admin if we're replacing it
-        const newUsers = isFirstUser ? [newUser] : [...data.users, newUser];
+        const newUsers = isFirstUser ? [newUser] : [...(data.users || []), newUser];
         
         await updateData({ users: newUsers as any });
         existingUser = newUser as any;

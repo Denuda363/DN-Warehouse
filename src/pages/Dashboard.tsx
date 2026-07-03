@@ -359,7 +359,7 @@ export const Dashboard: React.FC = () => {
         const valueCost = item.stock * (item.sellingPrice || 10000);
         return {
           id: item.id,
-          name: item.name.length > 20 ? item.name.substring(0, 18) + "..." : item.name,
+          name: (item.name || "").length > 20 ? (item.name || "").substring(0, 18) + "..." : (item.name || "Unknown"),
           "Valuasi": valueCost,
           "Stok": item.stock,
         };
@@ -1006,7 +1006,7 @@ export const Dashboard: React.FC = () => {
                   <Info className="w-3.5 h-3.5 text-indigo-500 shrink-0" /> Mitra Aktif Gudang:
                 </span>
                 <span className="font-bold underline text-indigo-600 dark:text-indigo-400 font-mono">
-                  {data.suppliers.length} Supplier
+                  {(data.suppliers || []).length} Supplier
                 </span>
               </div>
             </CardContent>

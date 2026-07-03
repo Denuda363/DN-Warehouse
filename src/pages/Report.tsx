@@ -208,7 +208,7 @@ export const Report: React.FC = () => {
                     </tr>
                   );
                 })}
-              {data.transactions.length === 0 && (
+              {(data.transactions || []).length === 0 && (
                 <tr>
                   <td
                     colSpan={7}

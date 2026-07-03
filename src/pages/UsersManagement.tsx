@@ -261,7 +261,7 @@ export const UsersManagement: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-500">
-                    {u.permissions.length} akses aktif
+                    {(u.permissions || []).length} akses aktif
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     <Button
