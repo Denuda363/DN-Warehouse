@@ -6,7 +6,7 @@ export const ActivityLogList: React.FC = () => {
   const { data } = useAppContext();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const logs = data.activityLogs || [];
+  const logs = [...(data.activityLogs || [])].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   
   const filteredLogs = logs.filter(
     (log) =>

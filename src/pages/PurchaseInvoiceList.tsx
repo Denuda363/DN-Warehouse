@@ -305,7 +305,7 @@ export const PurchaseInvoiceList: React.FC<{
         supplier?.name.toLowerCase().includes(searchLower) ||
         hasMatchingItem
       );
-    }) || [];
+    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
 
   const exportPdf = () => {
     const doc = new jsPDF();

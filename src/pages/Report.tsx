@@ -136,7 +136,7 @@ export const Report: React.FC = () => {
                   const searchStr =
                     `${item?.name || ""} ${t.notes} ${t.type}`.toLowerCase();
                   return searchStr.includes(searchTerm.toLowerCase());
-                })
+                }).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                 .map((tx) => {
                   const item = data.items.find((i) => i.id === tx.itemId);
                   const user = data.users.find((u) => u.id === tx.userId);

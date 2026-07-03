@@ -34,7 +34,7 @@ export const PurchaseReturnList: React.FC = () => {
            (t.returnNote && t.returnNote.toLowerCase().includes(searchLower)) ||
            item?.name.toLowerCase().includes(searchLower) ||
            supplier?.name.toLowerCase().includes(searchLower);
-  });
+  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div className="space-y-6 flex flex-col h-[calc(100vh-180px)]">
