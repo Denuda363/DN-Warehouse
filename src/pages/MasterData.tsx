@@ -937,11 +937,13 @@ export const MasterData: React.FC = () => {
                   ))}
               {activeTab === "low-stock" &&
                 Object.keys(lowStockBySupplier).map((supplierId) => {
+                  const supplierName = getSupplierName(supplierId).toLowerCase();
                   const items = lowStockBySupplier[supplierId].filter(
                     (i) =>
                       i.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                       (i.sku &&
-                        i.sku.toLowerCase().includes(searchTerm.toLowerCase())),
+                        i.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                      supplierName.includes(searchTerm.toLowerCase()),
                   );
 
                   if (items.length === 0) return null;
