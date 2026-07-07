@@ -9,12 +9,20 @@ import {
   CardContent,
 } from "../components/ui/Card";
 import { User, Role } from "../types";
-import { Edit, Trash2, Plus, Save, X } from "lucide-react";
+import { Edit, Trash2, Plus, Save, X, Eye, EyeOff } from "lucide-react";
 
 export const UsersManagement: React.FC = () => {
   const { data, updateData, currentUser, logActivity } = useAppContext();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<User>>({});
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+
+  const togglePasswordVisibility = (userId: string) => {
+    setVisiblePasswords(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
+  };
 
   const AVAILABLE_PERMISSIONS = [
     { id: "VIEW_DASHBOARD", label: "Menu: Dashboard" },
@@ -243,6 +251,7 @@ export const UsersManagement: React.FC = () => {
             <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 text-xs uppercase">
               <tr>
                 <th className="px-4 py-3 font-medium">Username</th>
+                <th className="px-4 py-3 font-medium">Password</th>
                 <th className="px-4 py-3 font-medium">Role</th>
                 <th className="px-4 py-3 font-medium">Hak Akses</th>
                 <th className="px-4 py-3 font-medium text-right">Aksi</th>
@@ -255,6 +264,24 @@ export const UsersManagement: React.FC = () => {
                   className="hover:bg-slate-50 dark:hover:bg-slate-900/50"
                 >
                   <td className="px-4 py-3 font-medium">{u.username}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                    <div className="flex items-center gap-2">
+                      <span>{visiblePasswords[u.id] ? (u.password || "Tidak ada password") : "••••••••"}</span>
+                      {u.password && (
+                        <button
+                          onClick={() => togglePasswordVisibility(u.id)}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none"
+                          title={visiblePasswords[u.id] ? "Sembunyikan password" : "Lihat password"}
+                        >
+                          {visiblePasswords[u.id] ? (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 rounded bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 text-xs font-bold font-mono">
                       {u.role}
