@@ -17,6 +17,9 @@ import {
   Layers,
   Copy,
   Search,
+  Download,
+  Upload,
+  AlertTriangle
 } from "lucide-react";
 import { Item } from "../types";
 
@@ -117,6 +120,7 @@ export const PurchaseInvoiceForm: React.FC<{
   const [activeDraftId, setActiveDraftId] = useState<string>("");
   const [draftSearchQuery, setDraftSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
 
   // Memoized filter for drafts
   const filteredDrafts = useMemo(() => {
@@ -373,6 +377,128 @@ export const PurchaseInvoiceForm: React.FC<{
     };
     setDrafts((prev) => [...prev, clone]);
     setActiveDraftId(clone.id);
+  };
+
+  const downloadTemplate = () => {
+    const wb = XLSX.utils.book_new();
+    const headers = [
+      "SKU",
+      "Qty",
+      "HargaSatuan",
+      "DiskonRp",
+      "DiskonPersen",
+      "BatchNo",
+      "ExpDate_YYYY_MM_DD",
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([headers]);
+    ws["!cols"] = [
+      { wch: 15 }, { wch: 10 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 20 }
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "Template_FakturMasuk");
+    XLSX.writeFile(wb, `Template_FakturMasuk_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
+
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeDraft) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const dataStr = event.target?.result;
+        const wb = XLSX.read(dataStr, { type: "array" });
+        const wsName = wb.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json<any>(wb.Sheets[wsName]);
+        
+        let errors: string[] = [];
+        let newItems: InvoiceItem[] = [];
+
+        rows.forEach((row, index) => {
+          const sku = row.SKU;
+          if (!sku) {
+            errors.push(`Baris ${index + 2}: SKU kosong.`);
+            return;
+          }
+
+          const itemMatch = data.items.find(i => i.sku === sku);
+          if (!itemMatch) {
+            errors.push(`Baris ${index + 2}: Barang dengan SKU ${sku} tidak ditemukan.`);
+            return;
+          }
+
+          const qty = parseFloat(row.Qty) || 0;
+          if (qty <= 0) {
+            errors.push(`Baris ${index + 2}: Qty tidak valid untuk SKU ${sku}.`);
+            return;
+          }
+
+          const price = parseFloat(row.HargaSatuan) || 0;
+          if (price < 0) {
+            errors.push(`Baris ${index + 2}: Harga Satuan tidak valid untuk SKU ${sku}.`);
+            return;
+          }
+
+          const discRp = parseFloat(row.DiskonRp) || 0;
+          const discPct = parseFloat(row.DiskonPersen) || 0;
+          let discountType: "Rp" | "%" = "Rp";
+          let discountValue = 0;
+          
+          if (discPct > 0) {
+            discountType = "%";
+            discountValue = discPct;
+          } else if (discRp > 0) {
+            discountType = "Rp";
+            discountValue = discRp;
+          }
+
+          const batchNo = row.BatchNo ? String(row.BatchNo) : "";
+          const expDate = row.ExpDate_YYYY_MM_DD ? String(row.ExpDate_YYYY_MM_DD) : "";
+
+          let computedDiscount = discountValue;
+          if (discountType === "%") {
+            computedDiscount = (price * discountValue) / 100;
+          }
+          const unitPriceAfterDisc = price - computedDiscount;
+          const subtotal = unitPriceAfterDisc * qty;
+
+          newItems.push({
+            id: `item-import-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            item: itemMatch,
+            qty,
+            selectedUnitId: itemMatch.unitId,
+            price,
+            discountType,
+            discountValue,
+            batchNo,
+            expDate,
+            subtotal,
+            returnedQty: 0
+          });
+        });
+
+        if (newItems.length > 0) {
+          setDrafts(prev => prev.map(d => 
+            d.id === activeDraft.id 
+              ? { ...d, items: [...d.items, ...newItems] } 
+              : d
+          ));
+        }
+
+        setImportErrors(errors);
+
+        if (errors.length > 0) {
+          alert(`Import selesai dengan beberapa error. ${newItems.length} barang berhasil ditambahkan.`);
+        } else {
+          alert(`Berhasil mengimport ${newItems.length} barang dari Excel.`);
+        }
+      } catch (err) {
+        console.error("Excel import error", err);
+        alert("Gagal membaca file Excel. Pastikan format sesuai.");
+      } finally {
+        e.target.value = "";
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const handleAddItem = () => {
@@ -783,7 +909,6 @@ export const PurchaseInvoiceForm: React.FC<{
 
           {activeDraft ? (
             <div
-              layout
               className="space-y-6"
             >
               {/* Shorthand / Browser-like tabs row for active invoices queue when simple/spacious mode is active */}
@@ -1141,6 +1266,39 @@ export const PurchaseInvoiceForm: React.FC<{
                         </Button>
                       </div>
                     </div>
+                    
+                    <div className="mt-4 flex flex-wrap gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                      <Button variant="outline" onClick={downloadTemplate} className="text-slate-600 dark:text-slate-300 text-xs h-9">
+                        <Download className="w-4 h-4 mr-2" /> Template Excel
+                      </Button>
+                      <div className="relative">
+                        <Button variant="outline" className="text-slate-600 dark:text-slate-300 text-xs h-9 relative">
+                          <Upload className="w-4 h-4 mr-2" /> Import dari Excel
+                          <input 
+                            type="file" 
+                            accept=".xlsx, .xls"
+                            className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                            onChange={handleImportExcel}
+                            title="Import Excel"
+                          />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {importErrors.length > 0 && (
+                      <div className="mt-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-xs border border-red-200 dark:border-red-900/50">
+                        <div className="font-bold flex items-center mb-1">
+                          <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
+                          Error saat import Excel:
+                        </div>
+                        <ul className="list-disc pl-5 space-y-0.5 max-h-32 overflow-y-auto custom-scrollbar">
+                          {importErrors.map((err, i) => (
+                            <li key={i}>{err}</li>
+                          ))}
+                        </ul>
+                        <button onClick={() => setImportErrors([])} className="mt-2 text-red-500 font-bold underline">Tutup</button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Items List */}

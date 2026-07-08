@@ -22,6 +22,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
+import { StockOpname } from "../components/StockOpname";
+
 const generateSkuForCategory = (categoryId: string, categories: Category[], items: Item[]): string => {
   if (!categoryId) return "";
   const category = categories.find(c => c.id === categoryId);
@@ -58,7 +60,7 @@ const generateSkuForCategory = (categoryId: string, categories: Category[], item
 export const MasterData: React.FC = () => {
   const { data, updateData, currentUser, logActivity } = useAppContext();
   const [activeTab, setActiveTab] = useState<
-    "items" | "categories" | "units" | "suppliers" | "staffs" | "low-stock"
+    "items" | "categories" | "units" | "suppliers" | "staffs" | "low-stock" | "opname"
   >("items");
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
@@ -93,6 +95,7 @@ export const MasterData: React.FC = () => {
     { id: "suppliers", label: "Supplier", perm: "MASTER_TAB_SUPPLIERS" },
     { id: "staffs", label: "Staff Gudang", perm: "MASTER_TAB_STAFF" },
     { id: "low-stock", label: "Stok Menipis", perm: "MASTER_TAB_LOWSTOCK" },
+    { id: "opname", label: "Stock Opname", perm: "MASTER_TAB_OPNAME" },
   ];
 
   const tabs = allTabs.filter((t) => {
@@ -627,20 +630,23 @@ export const MasterData: React.FC = () => {
       </div>
 
       <JarvisTransition pageKey={activeTab} mode="tab">
-        <Card className="flex-1 flex flex-col overflow-hidden w-full">
-          <div className="p-4 border-b dark:border-slate-800 flex justify-between items-center w-full">
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-              <Input
-              placeholder="Cari data..."
-              className="pl-9 w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+        {activeTab === "opname" ? (
+          <StockOpname />
+        ) : (
+          <Card className="flex-1 flex flex-col overflow-hidden w-full">
+            <div className="p-4 border-b dark:border-slate-800 flex justify-between items-center w-full">
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                <Input
+                placeholder="Cari data..."
+                className="pl-9 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="flex-1 overflow-auto custom-scrollbar">
+          <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="w-full text-sm text-left min-w-[800px]">
             <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10 border-b dark:border-slate-800">
               {activeTab === "items" && (
@@ -993,6 +999,7 @@ export const MasterData: React.FC = () => {
           </table>
         </div>
       </Card>
+      )}
       </JarvisTransition>
 
       {/* MODALS */}
