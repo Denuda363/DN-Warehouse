@@ -3,6 +3,7 @@ import { useAppContext } from "../store/AppContext";
 import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { SearchableSelect } from "../components/ui/SearchableSelect";
 import {
   Search,
   Plus,
@@ -1465,45 +1466,33 @@ export const MasterData: React.FC = () => {
                       <label className="block text-sm font-bold mb-1">
                         Supplier Utama
                       </label>
-                      <select
-                        className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-950"
+                      <SearchableSelect
+                        options={[{ value: "", label: "Pilih Supplier Utama" }, ...data.suppliers.map((c) => ({ value: c.id, label: c.name }))]}
                         value={editItemData?.supplierId || ""}
-                        onChange={(e) =>
+                        onChange={(value) =>
                           setEditItemData({
                             ...editItemData,
-                            supplierId: e.target.value,
+                            supplierId: value,
                           })
                         }
-                      >
-                        <option value="">Pilih Supplier Utama</option>
-                        {data.suppliers.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Pilih Supplier Utama"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-bold mb-1">
                         Supplier Alternatif
                       </label>
-                      <select
-                        className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-950"
+                      <SearchableSelect
+                        options={[{ value: "", label: "Pilih Supplier Alternatif" }, ...data.suppliers.map((c) => ({ value: c.id, label: c.name }))]}
                         value={editItemData?.altSupplierId || ""}
-                        onChange={(e) =>
+                        onChange={(value) =>
                           setEditItemData({
                             ...editItemData,
-                            altSupplierId: e.target.value,
+                            altSupplierId: value,
                           })
                         }
-                      >
-                        <option value="">Pilih Supplier Alternatif</option>
-                        {data.suppliers.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Pilih Supplier Alternatif"
+                      />
                     </div>
                   </div>
                 </div>

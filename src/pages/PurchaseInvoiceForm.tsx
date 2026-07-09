@@ -472,7 +472,6 @@ export const PurchaseInvoiceForm: React.FC<{
             batchNo,
             expDate,
             subtotal,
-            returnedQty: 0
           });
         });
 
