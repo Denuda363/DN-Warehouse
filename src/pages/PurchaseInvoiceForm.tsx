@@ -1119,7 +1119,7 @@ export const PurchaseInvoiceForm: React.FC<{
                         <SearchableSelect
                           options={filteredItems.map((item) => ({
                             value: item.id,
-                            label: `[${item.sku}] ${item.name}`,
+                            label: `[${item.sku}] ${item.name} (Stok: ${item.stock})`,
                           }))}
                           value={currentItem.item?.id || ""}
                           onChange={(val) => {

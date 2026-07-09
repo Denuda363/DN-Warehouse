@@ -275,6 +275,7 @@ export const Layout: React.FC<{
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
+        color: data.theme === 'dark' ? data.appTextColorDark : data.appTextColorLight,
       }}
     >
       {/* Background Overlay */}

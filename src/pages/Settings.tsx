@@ -374,6 +374,57 @@ export const Settings: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium mb-1">
+                      Warna Teks (Mode Terang)
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="color"
+                        value={data.appTextColorLight || "#0f172a"}
+                        onChange={(e) =>
+                          updateData({ appTextColorLight: e.target.value })
+                        }
+                        className="w-12 p-1 h-9 cursor-pointer"
+                      />
+                      <Input
+                        type="text"
+                        value={data.appTextColorLight || "#0f172a"}
+                        onChange={(e) =>
+                          updateData({ appTextColorLight: e.target.value })
+                        }
+                        className="flex-1 font-mono text-sm"
+                        placeholder="#0f172a"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">
+                      Warna Teks (Mode Gelap)
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        type="color"
+                        value={data.appTextColorDark || "#f8fafc"}
+                        onChange={(e) =>
+                          updateData({ appTextColorDark: e.target.value })
+                        }
+                        className="w-12 p-1 h-9 cursor-pointer"
+                      />
+                      <Input
+                        type="text"
+                        value={data.appTextColorDark || "#f8fafc"}
+                        onChange={(e) =>
+                          updateData({ appTextColorDark: e.target.value })
+                        }
+                        className="flex-1 font-mono text-sm"
+                        placeholder="#f8fafc"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <p className="text-sm font-medium mb-3 flex items-center">
                     Ganti Background / Wallpaper

@@ -16,7 +16,6 @@ import {
   getDoc,
   setDoc,
   onSnapshot,
-  getDocFromServer,
 } from "firebase/firestore";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 
@@ -95,20 +94,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [firebaseUser, setFirebaseUser] = useState<any>(null);
 
   useEffect(() => {
-    async function testConnection() {
-      try {
-        await getDocFromServer(doc(db, "appData", "connection_test"));
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message.includes("the client is offline")
-        ) {
-          console.error("Please check your Firebase configuration.");
-        }
-      }
-    }
-    testConnection();
-
     return onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
     });

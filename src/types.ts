@@ -150,6 +150,8 @@ export type AppData = {
   navBgColor?: string;
   navTextColor?: string;
   navIsTransparent?: boolean;
+  appTextColorLight?: string;
+  appTextColorDark?: string;
   warehouseProfile?: WarehouseProfile;
   backgroundImage?: string | null;
   backgroundOpacity?: number;
