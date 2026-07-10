@@ -34,6 +34,7 @@ const defaultData: AppData = {
       ],
     },
   ],
+  subCategories: [],
   categories: [
     { id: "cat-1", name: "Elektronik" },
     { id: "cat-2", name: "Perabot" },

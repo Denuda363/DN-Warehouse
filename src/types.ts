@@ -9,6 +9,13 @@ export type User = {
   allowedCategoryIds?: string[]; // If set and not empty, restrict access to these categories.
 };
 
+export type SubCategory = {
+  id: string;
+  categoryId: string;
+  subCategoryId?: string;
+  name: string;
+};
+
 export type Category = {
   id: string;
   name: string;
@@ -37,6 +44,7 @@ export type Item = {
   name: string;
   imageUrl?: string;
   categoryId: string;
+  subCategoryId?: string;
   unitId: string;
   stock: number;
   unbatchedStock?: number;
@@ -126,6 +134,7 @@ export type ActivityLog = {
 export type AppData = {
   users: User[];
   categories: Category[];
+  subCategories?: SubCategory[];
   units: Unit[];
   suppliers: Supplier[];
   staffs: Staff[];

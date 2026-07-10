@@ -16,7 +16,7 @@ import {
   Package,
   Image as ImageIcon,
 } from "lucide-react";
-import { Item, Category, Unit, Supplier, Staff } from "../types";
+import { Item, Category, SubCategory, Unit, Supplier, Staff } from "../types";
 import { JarvisTransition } from "../components/JarvisTransition";
 import { ExportLowStockModal } from "../components/ExportLowStockModal";
 import jsPDF from "jspdf";
@@ -61,18 +61,22 @@ const generateSkuForCategory = (categoryId: string, categories: Category[], item
 export const MasterData: React.FC = () => {
   const { data, updateData, currentUser, logActivity } = useAppContext();
   const [activeTab, setActiveTab] = useState<
-    "items" | "categories" | "units" | "suppliers" | "staffs" | "low-stock" | "opname"
+    "items" | "categories" | "subCategories" | "units" | "suppliers" | "staffs" | "low-stock" | "opname"
   >("items");
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterSupplier, setFilterSupplier] = useState("");
+  const [filterSubCategory, setFilterSubCategory] = useState("");
 
   const [modalType, setModalType] = useState<
-    null | "items" | "categories" | "units" | "suppliers" | "staffs"
+    null | "items" | "categories" | "subCategories" | "units" | "suppliers" | "staffs"
   >(null);
   const [editItemData, setEditItemData] = useState<Partial<Item> | null>(null);
   const [editCategoryData, setEditCategoryData] =
     useState<Partial<Category> | null>(null);
+  const [editSubCategoryData, setEditSubCategoryData] =
+    useState<Partial<SubCategory> | null>(null);
   const [editUnitData, setEditUnitData] = useState<Partial<Unit> | null>(null);
   const [editSupplierData, setEditSupplierData] =
     useState<Partial<Supplier> | null>(null);
@@ -92,6 +96,7 @@ export const MasterData: React.FC = () => {
   const allTabs = [
     { id: "items", label: "Produk", perm: "MASTER_TAB_ITEMS" },
     { id: "categories", label: "Kategori", perm: "MASTER_TAB_CATEGORIES" },
+    { id: "subCategories", label: "Sub Kategori", perm: "MASTER_TAB_CATEGORIES" },
     { id: "units", label: "Satuan", perm: "MASTER_TAB_UNITS" },
     { id: "suppliers", label: "Supplier", perm: "MASTER_TAB_SUPPLIERS" },
     { id: "staffs", label: "Staff Gudang", perm: "MASTER_TAB_STAFF" },
@@ -113,7 +118,7 @@ export const MasterData: React.FC = () => {
 
   const handleDelete = (
     id: string,
-    type: "items" | "categories" | "units" | "suppliers" | "staffs",
+    type: "items" | "categories" | "subCategories" | "units" | "suppliers" | "staffs",
   ) => {
     if (!confirm("Hapus data ini?")) return;
 
@@ -123,6 +128,9 @@ export const MasterData: React.FC = () => {
     } else if (type === "categories") {
       logActivity("Hapus Kategori", `Menghapus kategori dengan ID ${id}`);
       updateData({ categories: data.categories.filter((i) => i.id !== id) });
+    } else if (type === "subCategories") {
+      logActivity("Hapus Sub Kategori", `Menghapus sub kategori dengan ID ${id}`);
+      updateData({ subCategories: (data.subCategories || []).filter((i) => i.id !== id) });
     } else if (type === "units") {
       logActivity("Hapus Satuan", `Menghapus satuan dengan ID ${id}`);
       updateData({ units: data.units.filter((i) => i.id !== id) });
@@ -171,6 +179,29 @@ export const MasterData: React.FC = () => {
       logActivity("Edit Item", `Memperbarui item: ${payload.name} (${payload.sku})`);
       updateData({
         items: data.items.map((i) => (i.id === payload.id ? payload : i)),
+      });
+    }
+    setModalType(null);
+  };
+
+  const handleSaveSubCategory = () => {
+    if (!editSubCategoryData?.name || !editSubCategoryData?.categoryId) return;
+    const isNew = !editSubCategoryData.id;
+    const payload = {
+      ...editSubCategoryData,
+      id: editSubCategoryData.id || `subcat-${Date.now()}`,
+    } as SubCategory;
+
+    const subCats = data.subCategories || [];
+    if (isNew) {
+      logActivity("Tambah Sub Kategori", `Menambahkan sub kategori baru: ${payload.name}`);
+      updateData({ subCategories: [payload, ...subCats] });
+    } else {
+      logActivity("Edit Sub Kategori", `Memperbarui sub kategori: ${payload.name}`);
+      updateData({
+        subCategories: subCats.map((i) =>
+          i.id === payload.id ? payload : i,
+        ),
       });
     }
     setModalType(null);
@@ -273,6 +304,10 @@ export const MasterData: React.FC = () => {
       setEditCategoryData({});
       setModalType("categories");
     }
+    if (activeTab === "subCategories") {
+      setEditSubCategoryData({});
+      setModalType("subCategories");
+    }
     if (activeTab === "units") {
       setEditUnitData({});
       setModalType("units");
@@ -301,6 +336,10 @@ export const MasterData: React.FC = () => {
     if (activeTab === "categories") {
       setEditCategoryData(item);
       setModalType("categories");
+    }
+    if (activeTab === "subCategories") {
+      setEditSubCategoryData(item);
+      setModalType("subCategories");
     }
     if (activeTab === "units") {
       setEditUnitData(item);
@@ -573,6 +612,7 @@ export const MasterData: React.FC = () => {
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {activeTab === "low-stock" ? (
             <Button
+
               onClick={() => setIsExportModalOpen(true)}
               className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm w-full sm:w-auto"
             >
@@ -581,7 +621,8 @@ export const MasterData: React.FC = () => {
             </Button>
           ) : (
             <>
-              <Button
+              <Button size="sm"
+
                 onClick={downloadTemplate}
                 variant="outline"
                 className="text-slate-600 dark:text-slate-300 w-full sm:w-auto"
@@ -590,6 +631,7 @@ export const MasterData: React.FC = () => {
               </Button>
               <div className="relative w-full sm:w-auto flex">
                 <Button
+
                   variant="outline"
                   className="text-slate-600 dark:text-slate-300 relative border-emerald-600 text-emerald-600 hover:bg-emerald-50 w-full sm:w-auto flex-1"
                 >
@@ -603,7 +645,8 @@ export const MasterData: React.FC = () => {
                   />
                 </Button>
               </div>
-              <Button
+              <Button size="sm"
+
                 onClick={openAddModal}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1 sm:w-auto"
               >
@@ -614,12 +657,12 @@ export const MasterData: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex gap-2 border-b dark:border-slate-800 overflow-x-auto custom-scrollbar">
+      <div className="flex gap-1 sm:gap-2 border-b dark:border-slate-800 overflow-x-auto custom-scrollbar px-2 sm:px-0">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
               activeTab === tab.id
                 ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
                 : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
@@ -635,17 +678,45 @@ export const MasterData: React.FC = () => {
           <StockOpname />
         ) : (
           <Card className="flex-1 flex flex-col overflow-hidden w-full">
-            <div className="p-4 border-b dark:border-slate-800 flex justify-between items-center w-full">
-              <div className="relative w-full sm:w-72">
+            <div className="p-3 sm:p-4 border-b dark:border-slate-800 flex flex-col sm:flex-row gap-3 items-center w-full bg-slate-50/50 dark:bg-slate-900/20">
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                 <Input
-                placeholder="Cari data..."
-                className="pl-9 w-full"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+                  placeholder="Cari data..."
+                  className="pl-9 h-9 w-full text-sm bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-indigo-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              {activeTab === "items" && (
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <div className="w-full sm:w-48">
+                    <SearchableSelect
+                      buttonClassName="h-9 text-sm"
+                      options={[
+                        { value: "", label: "Semua Sub Kategori" },
+                        ...(data.subCategories || []).map((sc) => ({ value: sc.id, label: sc.name }))
+                      ]}
+                      value={filterSubCategory}
+                      onChange={(val) => setFilterSubCategory(val)}
+                      placeholder="Semua Sub Kategori"
+                    />
+                  </div>
+                  <div className="w-full sm:w-48">
+                    <SearchableSelect
+                      buttonClassName="h-9 text-sm"
+                      options={[
+                        { value: "", label: "Semua Supplier" },
+                        ...data.suppliers.map((s) => ({ value: s.id, label: s.name }))
+                      ]}
+                      value={filterSupplier}
+                      onChange={(val) => setFilterSupplier(val)}
+                      placeholder="Semua Supplier"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
 
           <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="w-full text-sm text-left min-w-[800px]">
@@ -655,6 +726,7 @@ export const MasterData: React.FC = () => {
                   <th className="px-6 py-4 font-medium">SKU</th>
                   <th className="px-6 py-4 font-medium">Nama Produk</th>
                   <th className="px-6 py-4 font-medium">Kategori</th>
+                  <th className="px-6 py-4 font-medium">Sub Kategori</th>
                   <th className="px-6 py-4 font-medium">Satuan Utama</th>
                   <th className="px-6 py-4 font-medium">Supplier</th>
                   <th className="px-6 py-4 font-medium">Alt. Supplier</th>
@@ -666,6 +738,14 @@ export const MasterData: React.FC = () => {
                 <tr>
                   <th className="px-6 py-4 font-medium w-32">ID</th>
                   <th className="px-6 py-4 font-medium">Nama Kategori</th>
+                  <th className="px-6 py-4 text-right">Aksi</th>
+                </tr>
+              )}
+              {activeTab === "subCategories" && (
+                <tr>
+                  <th className="px-6 py-4 font-medium w-32">ID</th>
+                  <th className="px-6 py-4 font-medium">Kategori Induk</th>
+                  <th className="px-6 py-4 font-medium">Nama Sub Kategori</th>
                   <th className="px-6 py-4 text-right">Aksi</th>
                 </tr>
               )}
@@ -712,7 +792,9 @@ export const MasterData: React.FC = () => {
               {activeTab === "items" &&
                 filteredItems
                   .filter((i) =>
-                    i.name.toLowerCase().includes(searchTerm.toLowerCase()),
+                    i.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                    (filterSupplier ? i.supplierId === filterSupplier : true) &&
+                    (filterSubCategory ? i.subCategoryId === filterSubCategory : true)
                   )
                   .map((item) => (
                     <tr
@@ -757,6 +839,12 @@ export const MasterData: React.FC = () => {
                         {
                           data.categories.find((c) => c.id === item.categoryId)
                             ?.name
+                        }
+                      </td>
+                      <td className="px-6 py-3 text-slate-500">
+                        {
+                          item.subCategoryId ? (data.subCategories || []).find((c) => c.id === item.subCategoryId)
+                            ?.name || "-" : "-"
                         }
                       </td>
                       <td className="px-6 py-3">
@@ -829,6 +917,43 @@ export const MasterData: React.FC = () => {
                         </Button>
                         <Button
                           onClick={() => handleDelete(cat.id, "categories")}
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-500 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+              {activeTab === "subCategories" &&
+                (data.subCategories || [])
+                  .filter((i) =>
+                    i.name.toLowerCase().includes(searchTerm.toLowerCase()),
+                  )
+                  .map((subcat) => (
+                    <tr
+                      key={subcat.id}
+                      className="hover:bg-slate-50 dark:hover:bg-slate-900/50"
+                    >
+                      <td className="px-6 py-3 font-mono text-xs text-slate-500">
+                        {subcat.id}
+                      </td>
+                      <td className="px-6 py-3 font-medium">
+                        {data.categories.find(c => c.id === subcat.categoryId)?.name || "-"}
+                      </td>
+                      <td className="px-6 py-3 font-medium">{subcat.name}</td>
+                      <td className="px-6 py-3 text-right">
+                        <Button
+                          onClick={() => openEditModal(subcat)}
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-500 hover:text-indigo-600"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => handleDelete(subcat.id, "subCategories")}
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-slate-500 hover:text-red-600"
@@ -1025,12 +1150,72 @@ export const MasterData: React.FC = () => {
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setModalType(null)}>
+              <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
                 Batal
               </Button>
-              <Button
+              <Button size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 onClick={handleSaveCategory}
+              >
+                Simpan
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalType === "subCategories" && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl w-full max-w-sm shadow-xl">
+            <h3 className="text-lg font-bold mb-4">
+              {editSubCategoryData?.id ? "Edit" : "Tambah"} Sub Kategori
+            </h3>
+            <div className="space-y-4 mb-4">
+              <div>
+                <label className="block text-sm font-bold mb-1">
+                  Kategori Induk
+                </label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-950"
+                  value={editSubCategoryData?.categoryId || ""}
+                  onChange={(e) =>
+                    setEditSubCategoryData({
+                      ...editSubCategoryData,
+                      categoryId: e.target.value,
+                    })
+                  }
+                >
+                  <option value="">Pilih Kategori</option>
+                  {data.categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold mb-1">
+                  Nama Sub Kategori
+                </label>
+                <Input
+                  value={editSubCategoryData?.name || ""}
+                  onChange={(e) =>
+                    setEditSubCategoryData({
+                      ...editSubCategoryData,
+                      name: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
+                Batal
+              </Button>
+              <Button size="sm"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                onClick={handleSaveSubCategory}
+                disabled={!editSubCategoryData?.name || !editSubCategoryData?.categoryId}
               >
                 Simpan
               </Button>
@@ -1057,10 +1242,10 @@ export const MasterData: React.FC = () => {
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setModalType(null)}>
+              <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
                 Batal
               </Button>
-              <Button
+              <Button size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 onClick={handleSaveUnit}
               >
@@ -1104,10 +1289,10 @@ export const MasterData: React.FC = () => {
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setModalType(null)}>
+              <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
                 Batal
               </Button>
-              <Button
+              <Button size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 onClick={handleSaveSupplier}
               >
@@ -1151,10 +1336,10 @@ export const MasterData: React.FC = () => {
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setModalType(null)}>
+              <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
                 Batal
               </Button>
-              <Button
+              <Button size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 onClick={handleSaveStaff}
               >
@@ -1260,6 +1445,31 @@ export const MasterData: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-1">
+                    Sub Kategori
+                  </label>
+                  <select
+                    className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:border-slate-800 dark:bg-slate-950 disabled:opacity-50"
+                    value={editItemData?.subCategoryId || ""}
+                    disabled={!editItemData?.categoryId}
+                    onChange={(e) =>
+                      setEditItemData({
+                        ...editItemData,
+                        subCategoryId: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Pilih Sub Kategori</option>
+                    {(data.subCategories || [])
+                      .filter(sc => sc.categoryId === editItemData?.categoryId)
+                      .map((sc) => (
+                        <option key={sc.id} value={sc.id}>
+                          {sc.name}
+                        </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-1">
                     Satuan Utama
                   </label>
                   <select
@@ -1330,7 +1540,7 @@ export const MasterData: React.FC = () => {
                     </h4>
                     <Button
                       variant="outline"
-                      size="sm"
+
                       onClick={() => {
                         const bt = editItemData?.batches
                           ? [...editItemData.batches]
@@ -1441,7 +1651,7 @@ export const MasterData: React.FC = () => {
                       <div className="pt-5">
                         <Button
                           variant="ghost"
-                          size="sm"
+
                           onClick={() => {
                             const newer = [...editItemData.batches!];
                             newer.splice(idx, 1);
@@ -1502,7 +1712,7 @@ export const MasterData: React.FC = () => {
                     <h4 className="font-bold text-sm">Satuan Alternatif</h4>
                     <Button
                       variant="outline"
-                      size="sm"
+
                       onClick={() => {
                         const au = editItemData?.alternateUnits
                           ? [...editItemData.alternateUnits]
@@ -1564,7 +1774,7 @@ export const MasterData: React.FC = () => {
                       </span>
                       <Button
                         variant="ghost"
-                        size="sm"
+
                         onClick={() => {
                           const newer = [...editItemData.alternateUnits!];
                           newer.splice(idx, 1);
@@ -1589,10 +1799,10 @@ export const MasterData: React.FC = () => {
               </div>
             </div>
             <div className="p-4 border-t dark:border-slate-800 flex justify-end gap-2 shrink-0 bg-slate-50 dark:bg-slate-900/50 rounded-b-xl">
-              <Button variant="ghost" onClick={() => setModalType(null)}>
+              <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
                 Batal
               </Button>
-              <Button
+              <Button size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 onClick={handleSaveItem}
               >

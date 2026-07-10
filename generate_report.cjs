@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+const fs = require('fs');
+
+const content = `import React, { useState } from "react";
 import { useAppContext } from "../store/AppContext";
 import { Card } from "../components/ui/Card";
 import { Search, ArrowDownRight, ArrowUpRight, Download, FileSpreadsheet, FileText } from "lucide-react";
@@ -98,8 +100,8 @@ export const Report: React.FC = () => {
           isHeader: false,
           sku: row.item.sku || '-',
           name: row.item.name,
-          stock: `${row.stockAtDate} ${getUnitName(row.item.unitId)}`,
-          minStock: `${row.minStock} ${getUnitName(row.item.unitId)}`,
+          stock: \`\${row.stockAtDate} \${getUnitName(row.item.unitId)}\`,
+          minStock: \`\${row.minStock} \${getUnitName(row.item.unitId)}\`,
           altSupplier: getSupplierName(row.item.altSupplierId),
         });
       });
@@ -108,13 +110,13 @@ export const Report: React.FC = () => {
     if (type === 'excel') {
       const wsData = [];
       wsData.push(["Laporan Stok Menipis Harian"]);
-      wsData.push([`Tanggal: ${lowStockDate}`]);
+      wsData.push([\`Tanggal: \${lowStockDate}\`]);
       wsData.push([]); 
       
       rows.forEach(r => {
         if (r.isHeader) {
           wsData.push([]);
-          wsData.push([`Supplier Utama: ${r.supplierName}`]);
+          wsData.push([\`Supplier Utama: \${r.supplierName}\`]);
           wsData.push(["SKU", "Nama Produk", "Sisa Stok", "Batas Minimum", "Supplier Alternatif"]);
         } else {
           wsData.push([r.sku, r.name, r.stock, r.minStock, r.altSupplier]);
@@ -124,26 +126,26 @@ export const Report: React.FC = () => {
       const ws = XLSX.utils.aoa_to_sheet(wsData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Stok Menipis");
-      XLSX.writeFile(wb, `Stok_Menipis_Harian_${lowStockDate}.xlsx`);
+      XLSX.writeFile(wb, \`Stok_Menipis_Harian_\${lowStockDate}.xlsx\`);
     } else {
       const doc = new jsPDF();
       doc.setFontSize(16);
       doc.text("Laporan Stok Menipis Harian", 14, 15);
       doc.setFontSize(10);
-      doc.text(`Tanggal: ${lowStockDate}`, 14, 22);
+      doc.text(\`Tanggal: \${lowStockDate}\`, 14, 22);
 
       let finalY = 28;
 
       Object.keys(groupedData).forEach(supplierId => {
         const supName = getSupplierName(supplierId);
         doc.setFontSize(11);
-        doc.text(`Supplier Utama: ${supName}`, 14, finalY + 5);
+        doc.text(\`Supplier Utama: \${supName}\`, 14, finalY + 5);
         
         const tableData = groupedData[supplierId].map(r => [
           r.item.sku || '-',
           r.item.name,
-          `${r.stockAtDate} ${getUnitName(r.item.unitId)}`,
-          `${r.minStock} ${getUnitName(r.item.unitId)}`,
+          \`\${r.stockAtDate} \${getUnitName(r.item.unitId)}\`,
+          \`\${r.minStock} \${getUnitName(r.item.unitId)}\`,
           getSupplierName(r.item.altSupplierId)
         ]);
 
@@ -159,7 +161,7 @@ export const Report: React.FC = () => {
         finalY = (doc as any).lastAutoTable.finalY + 5;
       });
 
-      doc.save(`Stok_Menipis_Harian_${lowStockDate}.pdf`);
+      doc.save(\`Stok_Menipis_Harian_\${lowStockDate}.pdf\`);
     }
   };
 
@@ -179,21 +181,21 @@ export const Report: React.FC = () => {
       <div className="flex gap-2 border-b dark:border-slate-800 overflow-x-auto custom-scrollbar">
         <button
           onClick={() => setActiveTab("arus")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+          className={\`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap \${
             activeTab === "arus"
               ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
               : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
-          }`}
+          }\`}
         >
           Arus Stok
         </button>
         <button
           onClick={() => setActiveTab("stok-menipis")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+          className={\`px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap \${
             activeTab === "stok-menipis"
               ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
               : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
-          }`}
+          }\`}
         >
           Stok Menipis Harian
         </button>
@@ -289,7 +291,7 @@ export const Report: React.FC = () => {
                         if (tDate > eDate) return false;
                       }
                       const searchStr =
-                        `${item?.name || ""} ${t.notes} ${t.type}`.toLowerCase();
+                        \`\${item?.name || ""} \${t.notes} \${t.type}\`.toLowerCase();
                       return searchStr.includes(searchTerm.toLowerCase());
                     }).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                     .map((tx) => {
@@ -342,13 +344,13 @@ export const Report: React.FC = () => {
                             })()}
                           </td>
                           <td className="px-6 py-4 font-medium">
-                            {item ? `${item.name} (${item.sku})` : "Item dihapus"}
+                            {item ? \`\${item.name} (\${item.sku})\` : "Item dihapus"}
                           </td>
                           <td className="px-6 py-4 text-slate-600 dark:text-slate-300">
                             {supplier ? supplier.name : "-"}
                           </td>
                           <td
-                            className={`px-6 py-4 text-right font-bold ${tx.type === "IN" ? "text-emerald-600 dark:text-emerald-400" : "text-orange-600 dark:text-orange-400"}`}
+                            className={\`px-6 py-4 text-right font-bold \${tx.type === "IN" ? "text-emerald-600 dark:text-emerald-400" : "text-orange-600 dark:text-orange-400"}\`}
                           >
                             {tx.type === "IN" ? "+" : "-"}
                             {tx.qty}
@@ -511,3 +513,7 @@ export const Report: React.FC = () => {
     </div>
   );
 };
+`;
+
+fs.writeFileSync('src/pages/Report.tsx', content);
+console.log('Report.tsx fully rewritten successfully!');
