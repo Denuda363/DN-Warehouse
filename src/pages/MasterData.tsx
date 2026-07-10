@@ -657,21 +657,21 @@ export const MasterData: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex gap-1 sm:gap-2 border-b dark:border-slate-800 overflow-x-auto custom-scrollbar px-2 sm:px-0">
+      <Card className="p-1 flex gap-1 bg-slate-50/50 dark:bg-slate-900/50 overflow-x-auto custom-scrollbar w-max max-w-full">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
               activeTab === tab.id
-                ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
-                : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
+                ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
             }`}
           >
             {tab.label}
           </button>
         ))}
-      </div>
+      </Card>
 
       <JarvisTransition pageKey={activeTab} mode="tab">
         {activeTab === "opname" ? (

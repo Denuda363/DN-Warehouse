@@ -307,21 +307,21 @@ export const Settings: React.FC = () => {
         </p>
       </div>
 
-      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto pb-px">
+      <Card className="p-1 flex gap-1 bg-slate-50/50 dark:bg-slate-900/50 overflow-x-auto custom-scrollbar w-max max-w-full">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
               activeTab === tab.id
-                ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
-                : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:hover:text-slate-300 dark:hover:border-slate-700"
+                ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/50"
             }`}
           >
             {tab.label}
           </button>
         ))}
-      </div>
+      </Card>
 
       <div className="flex-1 overflow-y-auto min-h-0 pt-2">
         <JarvisTransition pageKey={activeTab} mode="tab">
