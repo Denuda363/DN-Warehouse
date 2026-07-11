@@ -24,12 +24,23 @@ import { ActivityLogList } from "./ActivityLogList";
 
 const WarehouseProfileTab = () => {
   const { data, updateData, logActivity } = useAppContext();
-  const [profile, setProfile] = useState(data.warehouseProfile || { name: "", address: "", phone: "" });
+  const [profile, setProfile] = useState(data.warehouseProfile || { name: "", address: "", phone: "", logo: "" });
 
   const handleSave = () => {
     updateData({ warehouseProfile: profile as any });
     logActivity("Ubah Profil", "Memperbarui profil gudang");
     alert("Profil gudang berhasil disimpan!");
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setProfile({ ...profile, logo: base64 });
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -65,8 +76,35 @@ const WarehouseProfileTab = () => {
             placeholder="021-1234567"
           />
         </div>
-        <div className="pt-2">
-          <Button onClick={handleSave} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+        <div>
+          <p className="text-sm font-medium mb-1">Logo Gudang (Struk/Faktur)</p>
+          <div className="flex flex-col gap-2">
+            {profile.logo && (
+              <img
+                src={profile.logo}
+                alt="Logo Gudang"
+                className="h-16 w-auto object-contain border rounded"
+              />
+            )}
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              className="cursor-pointer"
+            />
+            {profile.logo && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setProfile({ ...profile, logo: undefined as any })}
+              >
+                Hapus Logo
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="pt-4 mt-6 border-t border-slate-100 dark:border-slate-800">
+          <Button onClick={handleSave} className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white">
             Simpan Profil
           </Button>
         </div>
@@ -84,27 +122,43 @@ export const Settings: React.FC = () => {
   const [pinInput, setPinInput] = useState("");
   const DEFAULT_PIN = "123456";
 
+    const [resetOptions, setResetOptions] = useState({
+    items: true,
+    transactions: true,
+    units: true,
+    categories: true,
+    suppliers: true,
+    staffs: true,
+    purchaseInvoices: true,
+    activityLogs: true,
+  });
+
   const handleResetApp = async () => {
     if (pinInput !== DEFAULT_PIN) {
       alert("PIN salah.");
       return;
     }
-    if (confirm("Ingin mereset seluruh data aplikasi dan mengembalikan ke setelan awal? SEMUA TRANSAKSI SEBELUMNYA AKAN HILANG.")) {
+    
+    if (confirm("Ingin mereset data yang dipilih? Data tidak dapat dikembalikan.")) {
        const initialData = {
+         ...data, // keep existing data as base
          users: data.users, // preserve users
-         categories: [],
-         units: [],
-         suppliers: [],
-         staffs: [],
-         items: [],
-         transactions: [],
-         purchaseInvoices: [],
-         activityLogs: [],
-         theme: "light" as "light" | "dark",
-         colorTheme: "indigo",
-         navStyle: "sidebar" as "sidebar" | "topbar" | "bottombar",
-         mobileNavStyle: "bottombar" as "sidebar" | "topbar" | "bottombar",
+         theme: data.theme,
+         colorTheme: data.colorTheme,
+         navStyle: data.navStyle,
+         mobileNavStyle: data.mobileNavStyle,
+         warehouseProfile: data.warehouseProfile,
        };
+       
+       if (resetOptions.categories) initialData.categories = [];
+       if (resetOptions.units) initialData.units = [];
+       if (resetOptions.suppliers) initialData.suppliers = [];
+       if (resetOptions.staffs) initialData.staffs = [];
+       if (resetOptions.items) initialData.items = [];
+       if (resetOptions.transactions) initialData.transactions = [];
+       if (resetOptions.purchaseInvoices) initialData.purchaseInvoices = [];
+       if (resetOptions.activityLogs) initialData.activityLogs = [];
+       
        await resetData(initialData as any);
        alert("Reset data berhasil!");
        setPinInput("");
@@ -704,6 +758,18 @@ export const Settings: React.FC = () => {
                     </Button>
                   </div>
                 </div>
+                
+                <div className="pt-4 mt-6 border-t border-slate-100 dark:border-slate-800">
+                  <Button 
+                    onClick={() => {
+                      logActivity("Simpan Tema", "Menyimpan pengaturan tema aplikasi");
+                      alert("Pengaturan tema berhasil disimpan!");
+                    }} 
+                    className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white"
+                  >
+                    Simpan Tema
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -758,10 +824,46 @@ export const Settings: React.FC = () => {
                 </p>
 
                 <div className="pt-6 mt-6 border-t border-slate-200 dark:border-slate-800">
-                  <h4 className="font-bold text-rose-600 mb-2">Reset Data Keseluruhan</h4>
+                  <h4 className="font-bold text-rose-600 mb-2">Reset Data Terpilih</h4>
                   <p className="text-sm text-slate-500 mb-4">
-                    Peringatan: Semua data transaksi, stok, dan referensi akan terhapus. Masukkan PIN keamanan untuk melanjutkan. (PIN Default: <b>123456</b>)
+                    Pilih data yang ingin direset. Data yang direset akan dihapus permanen. Masukkan PIN keamanan untuk melanjutkan. (PIN Default: <b>123456</b>)
                   </p>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    <label className="flex items-center space-x-2 text-sm">
+                      <input type="checkbox" checked={resetOptions.items} onChange={(e) => setResetOptions({...resetOptions, items: e.target.checked})} className="rounded text-rose-600 focus:ring-rose-500" />
+                      <span>Data Barang & Stok</span>
+                    </label>
+                    <label className="flex items-center space-x-2 text-sm">
+                      <input type="checkbox" checked={resetOptions.transactions} onChange={(e) => setResetOptions({...resetOptions, transactions: e.target.checked})} className="rounded text-rose-600 focus:ring-rose-500" />
+                      <span>Transaksi Keluar/Masuk</span>
+                    </label>
+                    <label className="flex items-center space-x-2 text-sm">
+                      <input type="checkbox" checked={resetOptions.purchaseInvoices} onChange={(e) => setResetOptions({...resetOptions, purchaseInvoices: e.target.checked})} className="rounded text-rose-600 focus:ring-rose-500" />
+                      <span>Faktur Pembelian</span>
+                    </label>
+                    <label className="flex items-center space-x-2 text-sm">
+                      <input type="checkbox" checked={resetOptions.categories} onChange={(e) => setResetOptions({...resetOptions, categories: e.target.checked})} className="rounded text-rose-600 focus:ring-rose-500" />
+                      <span>Kategori Barang</span>
+                    </label>
+                    <label className="flex items-center space-x-2 text-sm">
+                      <input type="checkbox" checked={resetOptions.units} onChange={(e) => setResetOptions({...resetOptions, units: e.target.checked})} className="rounded text-rose-600 focus:ring-rose-500" />
+                      <span>Satuan Barang</span>
+                    </label>
+                    <label className="flex items-center space-x-2 text-sm">
+                      <input type="checkbox" checked={resetOptions.suppliers} onChange={(e) => setResetOptions({...resetOptions, suppliers: e.target.checked})} className="rounded text-rose-600 focus:ring-rose-500" />
+                      <span>Data Supplier</span>
+                    </label>
+                    <label className="flex items-center space-x-2 text-sm">
+                      <input type="checkbox" checked={resetOptions.staffs} onChange={(e) => setResetOptions({...resetOptions, staffs: e.target.checked})} className="rounded text-rose-600 focus:ring-rose-500" />
+                      <span>Data Petugas</span>
+                    </label>
+                    <label className="flex items-center space-x-2 text-sm">
+                      <input type="checkbox" checked={resetOptions.activityLogs} onChange={(e) => setResetOptions({...resetOptions, activityLogs: e.target.checked})} className="rounded text-rose-600 focus:ring-rose-500" />
+                      <span>Log Aktivitas</span>
+                    </label>
+                  </div>
+
                   <div className="flex gap-2">
                     <Input 
                       type="password" 
@@ -774,9 +876,9 @@ export const Settings: React.FC = () => {
                       onClick={handleResetApp}
                       variant="destructive"
                       className="bg-rose-600 text-white"
-                      disabled={!pinInput}
+                      disabled={!pinInput || !Object.values(resetOptions).some(Boolean)}
                     >
-                      Reset Data
+                      Reset Data Terpilih
                     </Button>
                   </div>
                 </div>
@@ -784,130 +886,7 @@ export const Settings: React.FC = () => {
             </Card>
           )}
 
-          {activeTab === "profile" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Profil Gudang</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium mb-1">Nama Gudang</p>
-                  <Input
-                    type="text"
-                    value={data.warehouseProfile?.name || ""}
-                    onChange={(e) =>
-                      updateData({
-                        warehouseProfile: {
-                          ...data.warehouseProfile,
-                          name: e.target.value,
-                        } as any,
-                      })
-                    }
-                    placeholder="Ex: PT. Gudang Amanah"
-                  />
-                </div>
-                <div>
-                  <p className="text-sm font-medium mb-1">Alamat</p>
-                  <Input
-                    type="text"
-                    value={data.warehouseProfile?.address || ""}
-                    onChange={(e) =>
-                      updateData({
-                        warehouseProfile: {
-                          ...data.warehouseProfile,
-                          address: e.target.value,
-                        } as any,
-                      })
-                    }
-                    placeholder="Jln. Raya No. 12"
-                  />
-                </div>
-                <div>
-                  <p className="text-sm font-medium mb-1">Telepon</p>
-                  <Input
-                    type="text"
-                    value={data.warehouseProfile?.phone || ""}
-                    onChange={(e) =>
-                      updateData({
-                        warehouseProfile: {
-                          ...data.warehouseProfile,
-                          phone: e.target.value,
-                        } as any,
-                      })
-                    }
-                    placeholder="021-1234567"
-                  />
-                </div>
-                <div>
-                  <p className="text-sm font-medium mb-1">Logo</p>
-                  <div className="flex items-center gap-4 mt-2">
-                    {data.warehouseProfile?.logo ? (
-                      <img
-                        src={data.warehouseProfile.logo}
-                        alt="Logo"
-                        className="w-16 h-16 object-contain rounded border border-slate-200 p-1 bg-white"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400">
-                        <span className="text-[10px] mt-1">No Logo</span>
-                      </div>
-                    )}
-                    <div>
-                      <div className="relative">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="relative w-32 border-slate-300"
-                        >
-                          <Upload className="w-3.5 h-3.5 mr-2" /> Upload
-                          <input
-                            type="file"
-                            accept="image/*"
-                            title="Upload Logo"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  updateData({
-                                    warehouseProfile: {
-                                      ...data.warehouseProfile,
-                                      logo: event.target?.result as string,
-                                    } as any,
-                                  });
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
-                        </Button>
-                      </div>
-                      {data.warehouseProfile?.logo && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="mt-1 text-rose-500 hover:text-rose-600 hover:bg-rose-50 w-32 h-8"
-                          onClick={() =>
-                            updateData({
-                              warehouseProfile: {
-                                ...data.warehouseProfile,
-                                logo: undefined,
-                              } as any,
-                            })
-                          }
-                        >
-                          Hapus Logo
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {activeTab === "profile" && <WarehouseProfileTab />}
 
           {activeTab === "users" && <UsersManagement />}
           {activeTab === "logs" && <ActivityLogList />}
