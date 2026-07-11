@@ -1254,7 +1254,7 @@ export const Dashboard: React.FC = () => {
                   onClick={() => setSelectedCriticalItem(null)}
                   className="bg-slate-800 hover:bg-slate-700 text-white"
                 >
-                  Tutup
+                  <X className="w-4 h-4 mr-2" /> Tutup
                 </Button>
               </div>
             </div>

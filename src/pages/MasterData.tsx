@@ -66,6 +66,7 @@ export const MasterData: React.FC = () => {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
   const [filterSupplier, setFilterSupplier] = useState("");
   const [filterSubCategory, setFilterSubCategory] = useState("");
 
@@ -609,33 +610,37 @@ export const MasterData: React.FC = () => {
             Kelola data referensi aplikasi Anda.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+        <div className="flex gap-2 w-full sm:w-auto justify-end">
           {activeTab === "low-stock" ? (
-            <Button
-
-              onClick={() => setIsExportModalOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm w-full sm:w-auto"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Ekspor Data
-            </Button>
-          ) : (
-            <>
-              <Button size="sm"
-
-                onClick={downloadTemplate}
-                variant="outline"
-                className="text-slate-600 dark:text-slate-300 w-full sm:w-auto"
+            <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg gap-1 border border-slate-200 dark:border-slate-800">
+              <Button
+                onClick={() => setIsExportModalOpen(true)}
+                size="icon"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white h-9 w-10 sm:w-9 shadow-sm shrink-0"
+                title="Ekspor Data"
               >
-                <Download className="w-4 h-4 mr-2" /> Template Excel
+                <Download className="w-4 h-4" />
               </Button>
-              <div className="relative w-full sm:w-auto flex">
+            </div>
+          ) : activeTab !== "opname" ? (
+            <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg gap-1 border border-slate-200 dark:border-slate-800 w-full sm:w-auto">
+              <Button
+                onClick={downloadTemplate}
+                variant="ghost"
+                size="icon"
+                className="text-slate-600 dark:text-slate-300 h-9 w-10 sm:w-9 hover:bg-white dark:hover:bg-slate-800 shrink-0"
+                title="Download Template Excel"
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+              <div className="relative">
                 <Button
-
-                  variant="outline"
-                  className="text-slate-600 dark:text-slate-300 relative border-emerald-600 text-emerald-600 hover:bg-emerald-50 w-full sm:w-auto flex-1"
+                  variant="ghost"
+                  size="icon"
+                  className="text-emerald-600 dark:text-emerald-400 relative hover:bg-white dark:hover:bg-slate-800 h-9 w-10 sm:w-9 shrink-0"
+                  title="Import Excel"
                 >
-                  <FileSpreadsheet className="w-4 h-4 mr-2" /> Import Excel
+                  <FileSpreadsheet className="w-4 h-4" />
                   <input
                     type="file"
                     accept=".xlsx, .xls"
@@ -645,15 +650,16 @@ export const MasterData: React.FC = () => {
                   />
                 </Button>
               </div>
-              <Button size="sm"
-
+              <Button
                 onClick={openAddModal}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1 sm:w-auto"
+                size="icon"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white h-9 w-10 sm:w-9 shadow-sm shrink-0"
+                title="Tambah Data"
               >
-                <Plus className="w-4 h-4 mr-2" /> Tambah Data
+                <Plus className="w-4 h-4" />
               </Button>
-            </>
-          )}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -689,20 +695,32 @@ export const MasterData: React.FC = () => {
                 />
               </div>
               {activeTab === "items" && (
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                  <div className="w-full sm:w-48">
+                <div className="flex gap-2 w-full overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  <div className="w-auto min-w-[150px] shrink-0 sm:min-w-0 sm:w-48">
+                    <SearchableSelect
+                      buttonClassName="h-9 text-sm"
+                      options={[
+                        { value: "", label: "Semua Kategori" },
+                        ...data.categories.map((c) => ({ value: c.id, label: c.name }))
+                      ]}
+                      value={filterCategory}
+                      onChange={(val) => setFilterCategory(val)}
+                      placeholder="Semua Kategori"
+                    />
+                  </div>
+                  <div className="w-auto min-w-[150px] shrink-0 sm:min-w-0 sm:w-48">
                     <SearchableSelect
                       buttonClassName="h-9 text-sm"
                       options={[
                         { value: "", label: "Semua Sub Kategori" },
-                        ...(data.subCategories || []).map((sc) => ({ value: sc.id, label: sc.name }))
+                        ...(data.subCategories || []).filter(sc => filterCategory ? sc.categoryId === filterCategory : true).map((sc) => ({ value: sc.id, label: sc.name }))
                       ]}
                       value={filterSubCategory}
                       onChange={(val) => setFilterSubCategory(val)}
                       placeholder="Semua Sub Kategori"
                     />
                   </div>
-                  <div className="w-full sm:w-48">
+                  <div className="w-auto min-w-[150px] shrink-0 sm:min-w-0 sm:w-48">
                     <SearchableSelect
                       buttonClassName="h-9 text-sm"
                       options={[
@@ -719,7 +737,58 @@ export const MasterData: React.FC = () => {
             </div>
 
           <div className="flex-1 overflow-auto custom-scrollbar">
-          <table className="w-full text-sm text-left min-w-[800px]">
+          {activeTab === "items" && (
+            <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800/50">
+              {filteredItems
+                .filter((i) =>
+                  i.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                  (filterCategory ? i.categoryId === filterCategory : true) &&
+                  (filterSupplier ? i.supplierId === filterSupplier : true) &&
+                  (filterSubCategory ? i.subCategoryId === filterSubCategory : true)
+                )
+                .map((item) => (
+                  <div key={item.id} className="p-4 flex gap-3 items-center hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                    {item.imageUrl ? (
+                      <div className="w-12 h-12 shrink-0 rounded-md bg-slate-100 overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
+                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 shrink-0 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 flex items-center justify-center text-slate-400">
+                        <Package className="w-6 h-6 opacity-40" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{item.name}</div>
+                      <div className="text-[11px] text-slate-500 font-mono mt-0.5 truncate">
+                        {item.sku || "-"} • {data.categories.find((c) => c.id === item.categoryId)?.name || "Tanpa Kategori"}
+                      </div>
+                      <div className="text-xs text-indigo-600 dark:text-indigo-400 font-bold mt-1">
+                        {item.stock} {data.units.find((u) => u.id === item.unitId)?.name}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        onClick={() => openEditModal(item)}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        onClick={() => handleDelete(item.id, "items")}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+          <table className={`w-full text-sm text-left min-w-[800px] ${activeTab === 'items' ? 'hidden md:table' : ''}`}>
             <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10 border-b dark:border-slate-800">
               {activeTab === "items" && (
                 <tr>
@@ -793,6 +862,7 @@ export const MasterData: React.FC = () => {
                 filteredItems
                   .filter((i) =>
                     i.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+                    (filterCategory ? i.categoryId === filterCategory : true) &&
                     (filterSupplier ? i.supplierId === filterSupplier : true) &&
                     (filterSubCategory ? i.subCategoryId === filterSubCategory : true)
                   )
@@ -1151,13 +1221,13 @@ export const MasterData: React.FC = () => {
             </div>
             <div className="flex justify-end gap-2">
               <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
-                Batal
+                <X className="w-4 h-4 mr-2" /> Batal
               </Button>
               <Button size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 onClick={handleSaveCategory}
               >
-                Simpan
+                <Save className="w-4 h-4 mr-2" /> Simpan
               </Button>
             </div>
           </div>
@@ -1210,14 +1280,14 @@ export const MasterData: React.FC = () => {
             </div>
             <div className="flex justify-end gap-2">
               <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
-                Batal
+                <X className="w-4 h-4 mr-2" /> Batal
               </Button>
               <Button size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 onClick={handleSaveSubCategory}
                 disabled={!editSubCategoryData?.name || !editSubCategoryData?.categoryId}
               >
-                Simpan
+                <Save className="w-4 h-4 mr-2" /> Simpan
               </Button>
             </div>
           </div>
@@ -1243,13 +1313,13 @@ export const MasterData: React.FC = () => {
             </div>
             <div className="flex justify-end gap-2">
               <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
-                Batal
+                <X className="w-4 h-4 mr-2" /> Batal
               </Button>
               <Button size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 onClick={handleSaveUnit}
               >
-                Simpan
+                <Save className="w-4 h-4 mr-2" /> Simpan
               </Button>
             </div>
           </div>
@@ -1290,13 +1360,13 @@ export const MasterData: React.FC = () => {
             </div>
             <div className="flex justify-end gap-2">
               <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
-                Batal
+                <X className="w-4 h-4 mr-2" /> Batal
               </Button>
               <Button size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 onClick={handleSaveSupplier}
               >
-                Simpan
+                <Save className="w-4 h-4 mr-2" /> Simpan
               </Button>
             </div>
           </div>
@@ -1337,13 +1407,13 @@ export const MasterData: React.FC = () => {
             </div>
             <div className="flex justify-end gap-2">
               <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
-                Batal
+                <X className="w-4 h-4 mr-2" /> Batal
               </Button>
               <Button size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
                 onClick={handleSaveStaff}
               >
-                Simpan
+                <Save className="w-4 h-4 mr-2" /> Simpan
               </Button>
             </div>
           </div>
@@ -1800,7 +1870,7 @@ export const MasterData: React.FC = () => {
             </div>
             <div className="p-4 border-t dark:border-slate-800 flex justify-end gap-2 shrink-0 bg-slate-50 dark:bg-slate-900/50 rounded-b-xl">
               <Button size="sm" variant="ghost" onClick={() => setModalType(null)}>
-                Batal
+                <X className="w-4 h-4 mr-2" /> Batal
               </Button>
               <Button size="sm"
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"

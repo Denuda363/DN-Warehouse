@@ -98,14 +98,14 @@ const WarehouseProfileTab = () => {
                 size="sm"
                 onClick={() => setProfile({ ...profile, logo: undefined as any })}
               >
-                Hapus Logo
+                <Trash2 className="w-4 h-4 mr-2" /> Hapus Logo
               </Button>
             )}
           </div>
         </div>
         <div className="pt-4 mt-6 border-t border-slate-100 dark:border-slate-800">
-          <Button onClick={handleSave} className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white">
-            Simpan Profil
+          <Button onClick={handleSave} className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-2">
+            <Save className="w-4 h-4 mr-2" /> Simpan Profil
           </Button>
         </div>
       </CardContent>
@@ -765,9 +765,8 @@ export const Settings: React.FC = () => {
                       logActivity("Simpan Tema", "Menyimpan pengaturan tema aplikasi");
                       alert("Pengaturan tema berhasil disimpan!");
                     }} 
-                    className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white"
-                  >
-                    Simpan Tema
+                    className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-2">
+                    <Save className="w-4 h-4 mr-2" /> Simpan Tema
                   </Button>
                 </div>
               </CardContent>
@@ -875,10 +874,8 @@ export const Settings: React.FC = () => {
                     <Button 
                       onClick={handleResetApp}
                       variant="destructive"
-                      className="bg-rose-600 text-white"
-                      disabled={!pinInput || !Object.values(resetOptions).some(Boolean)}
-                    >
-                      Reset Data Terpilih
+                      className="bg-rose-600 text-white flex items-center justify-center gap-2" disabled={!pinInput || !Object.values(resetOptions).some(Boolean)}>
+                      <RotateCcw className="w-4 h-4 mr-2" /> Reset Data Terpilih
                     </Button>
                   </div>
                 </div>

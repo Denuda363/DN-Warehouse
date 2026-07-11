@@ -152,9 +152,9 @@ export const Login: React.FC<{ onSuccess: () => void }> = ({ onSuccess }) => {
 
           <Button
             type="submit"
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 text-base font-medium mt-6"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 text-base font-medium mt-6 flex items-center justify-center gap-2"
           >
-            Masuk
+            <LogIn className="w-5 h-5 mr-2" /> Masuk
           </Button>
         </form>
 

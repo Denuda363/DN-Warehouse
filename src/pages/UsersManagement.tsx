@@ -130,9 +130,10 @@ export const UsersManagement: React.FC = () => {
           <Button
             onClick={handleAddNew}
             className="bg-indigo-600 hover:bg-indigo-700 text-white"
-            size="sm"
+            size="icon"
+            title="Tambah Pengguna"
           >
-            <Plus className="w-4 h-4 mr-2" /> Tambah Pengguna
+            <Plus className="w-4 h-4" />
           </Button>
         )}
       </CardHeader>

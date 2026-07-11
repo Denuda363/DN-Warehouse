@@ -366,10 +366,12 @@ export const PurchaseInvoiceList: React.FC<{
           </div>
           <Button
             variant="outline"
-            className="text-slate-600 dark:text-slate-300 w-full sm:w-auto shrink-0"
+            size="icon"
+            className="text-slate-600 dark:text-slate-300 w-10 sm:w-10 shrink-0"
             onClick={exportPdf}
+            title="Export PDF"
           >
-            <Download className="w-4 h-4 mr-2" /> Export PDF
+            <Download className="w-4 h-4" />
           </Button>
         </div>
 

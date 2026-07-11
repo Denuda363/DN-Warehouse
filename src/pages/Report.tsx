@@ -406,11 +406,11 @@ export const Report: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => exportLowStock('excel')} className="h-10 text-emerald-600 hover:text-emerald-700 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-900/50 dark:hover:bg-emerald-900/20">
-                  <FileSpreadsheet className="w-4 h-4 mr-2" /> Excel
+                <Button variant="outline" size="icon" onClick={() => exportLowStock('excel')} className="h-10 w-10 text-emerald-600 hover:text-emerald-700 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-900/50 dark:hover:bg-emerald-900/20" title="Export Excel">
+                  <FileSpreadsheet className="w-4 h-4" />
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => exportLowStock('pdf')} className="h-10 text-rose-600 hover:text-rose-700 border-rose-200 hover:bg-rose-50 dark:border-rose-900/50 dark:hover:bg-rose-900/20">
-                  <FileText className="w-4 h-4 mr-2" /> PDF
+                <Button variant="outline" size="icon" onClick={() => exportLowStock('pdf')} className="h-10 w-10 text-rose-600 hover:text-rose-700 border-rose-200 hover:bg-rose-50 dark:border-rose-900/50 dark:hover:bg-rose-900/20" title="Export PDF">
+                  <FileText className="w-4 h-4" />
                 </Button>
               </div>
             </div>
