@@ -46,11 +46,11 @@ export const UsersManagement: React.FC = () => {
   ];
 
   const handleEdit = (user: User) => {
-    setFormData(user);
+    setFormData({ ...user, password: "" });
     setIsEditing(true);
   };
 
-  const handeAddNew = () => {
+  const handleAddNew = () => {
     setFormData({
       id: `user-${Date.now()}`,
       username: "",
@@ -62,17 +62,25 @@ export const UsersManagement: React.FC = () => {
   };
 
   const handleSave = () => {
-    if (!formData.username || !formData.role) return;
+    if (!formData.username || !formData.role) {
+      alert("Username dan Role wajib diisi!");
+      return;
+    }
 
-    const existing = data.users.find((u) => u.id === formData.id);
+    const existing = (data.users || []).find((u) => u.id === formData.id);
     let newUsers;
     if (existing) {
-      newUsers = data.users.map((u) =>
-        u.id === formData.id ? ({ ...u, ...formData } as User) : u,
+      const finalPassword = formData.password ? formData.password : existing.password;
+      newUsers = (data.users || []).map((u) =>
+        u.id === formData.id ? ({ ...u, ...formData, password: finalPassword } as User) : u,
       );
       logActivity("Edit Pengguna", `Memperbarui hak akses/data pengguna: ${formData.username}`);
     } else {
-      newUsers = [...data.users, formData as User];
+      if (!formData.password) {
+        alert("Password wajib diisi untuk pengguna baru!");
+        return;
+      }
+      newUsers = [...(data.users || []), formData as User];
       logActivity("Tambah Pengguna", `Menambahkan pengguna baru: ${formData.username}`);
     }
 
@@ -86,9 +94,9 @@ export const UsersManagement: React.FC = () => {
       return;
     }
     if (confirm("Hapus pengguna ini?")) {
-      const userToDelete = data.users.find(u => u.id === id);
+      const userToDelete = (data.users || []).find(u => u.id === id);
       logActivity("Hapus Pengguna", `Menghapus pengguna: ${userToDelete?.username}`);
-      updateData({ users: data.users.filter((u) => u.id !== id) });
+      updateData({ users: (data.users || []).filter((u) => u.id !== id) });
     }
   };
 
@@ -120,7 +128,7 @@ export const UsersManagement: React.FC = () => {
         <CardTitle>Manajemen Pengguna & Hak Akses</CardTitle>
         {!isEditing && (
           <Button
-            onClick={handeAddNew}
+            onClick={handleAddNew}
             className="bg-indigo-600 hover:bg-indigo-700 text-white"
             size="sm"
           >
@@ -132,7 +140,7 @@ export const UsersManagement: React.FC = () => {
         {isEditing ? (
           <div className="p-4 border rounded-lg bg-slate-50 dark:bg-slate-900/50 mb-4 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
             <h3 className="font-bold mb-4 flex items-center justify-between text-slate-800 dark:text-slate-100">
-              {data.users.find((u) => u.id === formData.id)
+              {(data.users || []).find((u) => u.id === formData.id)
                 ? "Edit Pengguna"
                 : "Tambah Pengguna Baru"}
               <Button
@@ -259,7 +267,7 @@ export const UsersManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-slate-800">
-              {data.users.map((u) => (
+              {(data.users || []).map((u) => (
                 <tr
                   key={u.id}
                   className="hover:bg-slate-50 dark:hover:bg-slate-900/50"
