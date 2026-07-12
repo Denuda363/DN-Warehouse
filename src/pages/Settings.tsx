@@ -16,6 +16,9 @@ import {
   Sun,
   Palette,
   LayoutTemplate,
+  Trash2,
+  Save,
+  RotateCcw,
 } from "lucide-react";
 import { UsersManagement } from "./UsersManagement";
 import { JarvisTransition } from "../components/JarvisTransition";

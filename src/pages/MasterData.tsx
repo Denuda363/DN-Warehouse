@@ -15,6 +15,7 @@ import {
   FileSpreadsheet,
   Package,
   Image as ImageIcon,
+  Save,
 } from "lucide-react";
 import { Item, Category, SubCategory, Unit, Supplier, Staff } from "../types";
 import { JarvisTransition } from "../components/JarvisTransition";
@@ -69,6 +70,9 @@ export const MasterData: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState("");
   const [filterSupplier, setFilterSupplier] = useState("");
   const [filterSubCategory, setFilterSubCategory] = useState("");
+  
+  const [itemsPage, setItemsPage] = useState(1);
+  const itemsPerPage = 50;
 
   const [modalType, setModalType] = useState<
     null | "items" | "categories" | "subCategories" | "units" | "suppliers" | "staffs"
@@ -601,6 +605,19 @@ export const MasterData: React.FC = () => {
     reader.readAsBinaryString(file);
   };
 
+  const processedItems = filteredItems.filter((i) =>
+    i.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (filterCategory ? i.categoryId === filterCategory : true) &&
+    (filterSupplier ? i.supplierId === filterSupplier : true) &&
+    (filterSubCategory ? i.subCategoryId === filterSubCategory : true)
+  );
+  
+  const totalItemsPages = Math.ceil(processedItems.length / itemsPerPage);
+  const paginatedItems = processedItems.slice(
+    (itemsPage - 1) * itemsPerPage,
+    itemsPage * itemsPerPage
+  );
+
   return (
     <div className="space-y-6 flex flex-col h-[calc(100vh-120px)] relative">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -739,14 +756,7 @@ export const MasterData: React.FC = () => {
           <div className="flex-1 overflow-auto custom-scrollbar">
           {activeTab === "items" && (
             <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800/50">
-              {filteredItems
-                .filter((i) =>
-                  i.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                  (filterCategory ? i.categoryId === filterCategory : true) &&
-                  (filterSupplier ? i.supplierId === filterSupplier : true) &&
-                  (filterSubCategory ? i.subCategoryId === filterSubCategory : true)
-                )
-                .map((item) => (
+              {paginatedItems.map((item) => (
                   <div key={item.id} className="p-4 flex gap-3 items-center hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                     {item.imageUrl ? (
                       <div className="w-12 h-12 shrink-0 rounded-md bg-slate-100 overflow-hidden border border-slate-200/50 dark:border-slate-700/50">
@@ -859,14 +869,7 @@ export const MasterData: React.FC = () => {
             </thead>
             <tbody className="divide-y dark:divide-slate-800">
               {activeTab === "items" &&
-                filteredItems
-                  .filter((i) =>
-                    i.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-                    (filterCategory ? i.categoryId === filterCategory : true) &&
-                    (filterSupplier ? i.supplierId === filterSupplier : true) &&
-                    (filterSubCategory ? i.subCategoryId === filterSubCategory : true)
-                  )
-                  .map((item) => (
+                paginatedItems.map((item) => (
                     <tr
                       key={item.id}
                       className="hover:bg-slate-50 dark:hover:bg-slate-900/50"
@@ -1194,6 +1197,32 @@ export const MasterData: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {activeTab === "items" && totalItemsPages > 1 && (
+          <div className="flex items-center justify-between p-4 border-t dark:border-slate-800">
+            <span className="text-sm text-slate-500">
+              Menampilkan {(itemsPage - 1) * itemsPerPage + 1} - {Math.min(itemsPage * itemsPerPage, processedItems.length)} dari {processedItems.length} Produk
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={itemsPage === 1}
+                onClick={() => setItemsPage(p => Math.max(1, p - 1))}
+              >
+                Sebelumnya
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={itemsPage === totalItemsPages}
+                onClick={() => setItemsPage(p => Math.min(totalItemsPages, p + 1))}
+              >
+                Selanjutnya
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
       )}
       </JarvisTransition>

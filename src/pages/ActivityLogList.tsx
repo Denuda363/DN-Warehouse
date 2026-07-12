@@ -5,6 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/Card"
 export const ActivityLogList: React.FC = () => {
   const { data } = useAppContext();
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 100;
 
   const logs = [...(data.activityLogs || [])].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   
@@ -14,6 +16,9 @@ export const ActivityLogList: React.FC = () => {
       log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.details.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+  const paginatedLogs = filteredLogs.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -51,8 +56,8 @@ export const ActivityLogList: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {filteredLogs.length > 0 ? (
-                filteredLogs.map((log) => (
+              {paginatedLogs.length > 0 ? (
+                paginatedLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/20">
                     <td className="px-4 py-3 whitespace-nowrap text-slate-500 text-xs">
                       {formatDate(log.timestamp)}
@@ -72,6 +77,30 @@ export const ActivityLogList: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex items-center justify-between border-t pt-4 dark:border-slate-800">
+            <span className="text-sm text-slate-500">
+              Menampilkan {(page - 1) * itemsPerPage + 1} - {Math.min(page * itemsPerPage, filteredLogs.length)} dari {filteredLogs.length}
+            </span>
+            <div className="flex gap-2">
+              <button
+                className="px-3 py-1 text-sm border rounded hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:opacity-50"
+                disabled={page === 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+              >
+                Sebelumnya
+              </button>
+              <button
+                className="px-3 py-1 text-sm border rounded hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:opacity-50"
+                disabled={page === totalPages}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              >
+                Selanjutnya
+              </button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

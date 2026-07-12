@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAppContext } from "../store/AppContext";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
-import { Database, Lock, User as UserIcon } from "lucide-react";
+import { Database, Lock, User as UserIcon, LogIn } from "lucide-react";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../firebase";
 

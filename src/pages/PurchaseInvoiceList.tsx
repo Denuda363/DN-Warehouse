@@ -51,6 +51,8 @@ export const PurchaseInvoiceList: React.FC<{
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 50;
 
   const [returnModal, setReturnModal] = useState<{
     isOpen: boolean;
@@ -307,6 +309,9 @@ export const PurchaseInvoiceList: React.FC<{
       );
     }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
 
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const paginatedInvoices = filteredInvoices.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
   const exportPdf = () => {
     const doc = new jsPDF();
     doc.text("Riwayat Faktur Pembelian", 14, 15);
@@ -378,7 +383,7 @@ export const PurchaseInvoiceList: React.FC<{
         <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 custom-scrollbar relative px-0 sm:px-0">
           {/* Mobile View - Cards */}
           <div className="md:hidden flex flex-col gap-3 p-4">
-            {filteredInvoices.map((inv) => {
+            {paginatedInvoices.map((inv) => {
               const supplier = data.suppliers.find(
                 (s) => s.id === inv.supplierId,
               );
@@ -607,7 +612,7 @@ export const PurchaseInvoiceList: React.FC<{
                 </tr>
               </thead>
               <tbody className="divide-y dark:divide-slate-800">
-                {filteredInvoices.map((inv) => {
+                {paginatedInvoices.map((inv) => {
                   const supplier = data.suppliers.find(
                     (s) => s.id === inv.supplierId,
                   );
@@ -943,6 +948,30 @@ export const PurchaseInvoiceList: React.FC<{
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between p-4 border-t dark:border-slate-800 shrink-0">
+              <span className="text-sm text-slate-500">
+                Menampilkan {(page - 1) * itemsPerPage + 1} - {Math.min(page * itemsPerPage, filteredInvoices.length)} dari {filteredInvoices.length}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  className="px-3 py-1 text-sm border rounded hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:opacity-50"
+                  disabled={page === 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                >
+                  Sebelumnya
+                </button>
+                <button
+                  className="px-3 py-1 text-sm border rounded hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 disabled:opacity-50"
+                  disabled={page === totalPages}
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                >
+                  Selanjutnya
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 
