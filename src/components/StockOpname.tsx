@@ -190,7 +190,7 @@ export const StockOpname: React.FC = () => {
   });
 
   const handleSetAllToZero = () => { if (!confirm("Apakah Anda yakin ingin mengatur semua stok fisik pada daftar ini menjadi 0?")) return; const newAdjustments = { ...adjustments }; filteredItems.forEach(item => { newAdjustments[item.id] = 0; }); setAdjustments(newAdjustments); }; return (
-    <div className="flex flex-col gap-4">
+    <div className="flex-1 flex flex-col gap-4 min-h-0">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <div className="relative w-full sm:w-64">
@@ -216,13 +216,13 @@ export const StockOpname: React.FC = () => {
           </select>
         </div>
         
-        <div className="flex flex-wrap gap-2 w-full md:w-auto">
-          <Button variant="outline" onClick={downloadTemplate} className="text-slate-600 dark:text-slate-300">
-            <Download className="w-4 h-4 mr-2" /> Template
+        <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
+          <Button variant="outline" size="icon" onClick={downloadTemplate} className="text-slate-600 dark:text-slate-300 shrink-0" title="Template Excel">
+            <Download className="w-4 h-4" />
           </Button>
-          <div className="relative">
-            <Button variant="outline" className="text-slate-600 dark:text-slate-300 w-full relative">
-              <Upload className="w-4 h-4 mr-2" /> Import Excel
+          <div className="relative shrink-0">
+            <Button variant="outline" size="icon" className="text-slate-600 dark:text-slate-300 relative" title="Import Excel">
+              <Upload className="w-4 h-4" />
               <input 
                 type="file" 
                 accept=".xlsx, .xls"
@@ -234,17 +234,20 @@ export const StockOpname: React.FC = () => {
           </div>
           <Button
             variant="outline"
-            className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20"
+            size="icon"
+            className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
             onClick={handleSetAllToZero}
+            title="Set Semua Nol"
           >
-            <RotateCcw className="w-4 h-4 mr-2" /> Set Semua Nol
+            <RotateCcw className="w-4 h-4" />
           </Button>
           <Button 
             onClick={handleSaveAdjustments} 
-            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1 md:flex-none"
             disabled={Object.keys(adjustments).length === 0}
+            title="Simpan Penyesuaian"
           >
-            <CheckCircle className="w-4 h-4 mr-2" /> Simpan Penyesuaian
+            <CheckCircle className="w-4 h-4 sm:mr-2" /> <span className="hidden sm:inline">Simpan</span>
           </Button>
         </div>
       </div>
@@ -263,10 +266,10 @@ export const StockOpname: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
+        <div className="flex-1 overflow-auto custom-scrollbar">
           <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-xs uppercase">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-xs uppercase sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-3 font-medium">SKU</th>
                 <th className="px-6 py-3 font-medium">Nama Barang</th>

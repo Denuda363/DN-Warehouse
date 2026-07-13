@@ -683,7 +683,7 @@ export const MasterData: React.FC = () => {
         </div>
       </div>
 
-      <Card className="p-1 flex flex-wrap gap-1 bg-slate-50/50 dark:bg-slate-900/50 w-full">
+      <Card className="p-1 flex gap-1 bg-slate-50/50 dark:bg-slate-900/50 overflow-x-auto custom-scrollbar w-max max-w-full">
         {tabs.map((tab) => (
           <button
             key={tab.id}
