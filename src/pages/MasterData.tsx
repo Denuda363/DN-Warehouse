@@ -359,7 +359,10 @@ export const MasterData: React.FC = () => {
       setModalType("staffs");
     }
   };  const lowStockItems = filteredItems.filter(
-    (item) => item.stock <= (item.minStock !== undefined ? item.minStock : 0),
+    (item) => item.stock <= (item.minStock !== undefined ? item.minStock : 0) &&
+    (filterCategory ? item.categoryId === filterCategory : true) &&
+    (filterSupplier ? item.supplierId === filterSupplier : true) &&
+    (filterSubCategory ? item.subCategoryId === filterSubCategory : true)
   );
   const lowStockBySupplier = lowStockItems.reduce(
     (acc, item) => {
@@ -680,7 +683,7 @@ export const MasterData: React.FC = () => {
         </div>
       </div>
 
-      <Card className="p-1 flex gap-1 bg-slate-50/50 dark:bg-slate-900/50 overflow-x-auto custom-scrollbar w-max max-w-full">
+      <Card className="p-1 flex flex-wrap gap-1 bg-slate-50/50 dark:bg-slate-900/50 w-full">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -711,7 +714,7 @@ export const MasterData: React.FC = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              {activeTab === "items" && (
+              {(activeTab === "items" || activeTab === "low-stock") && (
                 <div className="flex gap-2 w-full overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 sm:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   <div className="w-auto min-w-[150px] shrink-0 sm:min-w-0 sm:w-48">
                     <SearchableSelect

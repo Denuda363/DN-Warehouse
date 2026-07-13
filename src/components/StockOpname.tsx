@@ -189,7 +189,7 @@ export const StockOpname: React.FC = () => {
            i.sku.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  return (
+  const handleSetAllToZero = () => { if (!confirm("Apakah Anda yakin ingin mengatur semua stok fisik pada daftar ini menjadi 0?")) return; const newAdjustments = { ...adjustments }; filteredItems.forEach(item => { newAdjustments[item.id] = 0; }); setAdjustments(newAdjustments); }; return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
@@ -232,6 +232,13 @@ export const StockOpname: React.FC = () => {
               />
             </Button>
           </div>
+          <Button
+            variant="outline"
+            className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20"
+            onClick={handleSetAllToZero}
+          >
+            <RotateCcw className="w-4 h-4 mr-2" /> Set Semua Nol
+          </Button>
           <Button 
             onClick={handleSaveAdjustments} 
             className="bg-indigo-600 hover:bg-indigo-700 text-white"
