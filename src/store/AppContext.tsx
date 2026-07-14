@@ -196,10 +196,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [currentUser, isLoading]);
 
   const updateData = async (partial: Partial<AppData>) => {
-    const newData = { ...data, ...partial };
-    setData(newData);
+    setData(prev => ({ ...prev, ...partial }));
     try {
-      await setDoc(doc(db, "appData", "main"), newData);
+      await setDoc(doc(db, "appData", "main"), partial, { merge: true });
     } catch (e) {
       handleFirestoreError(e, OperationType.UPDATE, "appData/main");
     }
@@ -233,10 +232,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const currentLogs = data.activityLogs || [];
     const newLogs = [newLog, ...currentLogs].slice(0, 1000); // Keep last 1000 logs max
-
-    const newData = { ...data, activityLogs: newLogs };
-    setData(newData);
-    setDoc(doc(db, "appData", "main"), newData).catch((e) => {
+    
+    // Update local state first
+    setData((prev) => ({ ...prev, activityLogs: newLogs }));
+    
+    // Then write to Firestore
+    setDoc(doc(db, "appData", "main"), { activityLogs: newLogs }, { merge: true }).catch((e) => {
       console.error("Failed to save activity log", e);
     });
   };

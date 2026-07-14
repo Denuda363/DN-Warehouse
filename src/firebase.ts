@@ -51,5 +51,5 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     path
   };
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  // Prevent app crash on quota limits\n  // throw new Error(JSON.stringify(errInfo));
+  if (errInfo.error.toLowerCase().includes('quota') || errInfo.error.toLowerCase().includes('resource-exhausted')) { alert('Maaf, kuota database harian Anda telah habis. Perubahan mungkin tidak tersimpan secara permanen sampai kuota direset besok.'); }
 }
