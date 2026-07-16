@@ -80,6 +80,8 @@ export type Transaction = {
 
 export type PurchaseInvoiceStatus = "COMPLETED" | "CANCELED" | "RETURNED";
 
+export type PurchaseInvoiceItemStatus = "RECEIVED" | "PENDING";
+
 export type PurchaseInvoiceItem = {
   id: string;
   itemId: string;
@@ -94,6 +96,7 @@ export type PurchaseInvoiceItem = {
   batchNo: string;
   expDate: string;
   subtotal: number;
+  status?: PurchaseInvoiceItemStatus;
 };
 
 export type PurchaseInvoice = {

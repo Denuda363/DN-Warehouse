@@ -69,6 +69,7 @@ type InvoiceItemForm = {
   discountValue: number;
   batchNo: string;
   expDate: string;
+  status: "RECEIVED" | "PENDING";
 };
 
 type InvoiceItem = {
@@ -82,6 +83,7 @@ type InvoiceItem = {
   batchNo: string;
   expDate: string;
   subtotal: number;
+  status?: "RECEIVED" | "PENDING";
 };
 
 interface DraftInvoice {
@@ -145,6 +147,7 @@ export const PurchaseInvoiceForm: React.FC<{
     discountValue: 0,
     batchNo: "",
     expDate: "",
+    status: "RECEIVED",
   });
 
   const createNewDraftInstance = (customNo?: string): DraftInvoice => {
@@ -523,6 +526,7 @@ export const PurchaseInvoiceForm: React.FC<{
       batchNo: currentItem.batchNo,
       expDate: currentItem.expDate,
       subtotal: itemSubtotal,
+      status: currentItem.status,
     };
 
     updateActiveDraftItems((items) => [...items, newItem]);
@@ -537,6 +541,7 @@ export const PurchaseInvoiceForm: React.FC<{
       discountValue: 0,
       batchNo: "",
       expDate: "",
+      status: "RECEIVED",
     });
   };
 
@@ -650,6 +655,7 @@ export const PurchaseInvoiceForm: React.FC<{
           batchNo: i.batchNo,
           expDate: i.expDate,
           subtotal: i.subtotal,
+          status: i.status || "RECEIVED",
         };
       });
 
@@ -678,6 +684,10 @@ export const PurchaseInvoiceForm: React.FC<{
 
       // Create transactions
       newInvoice.items.forEach((invItem) => {
+        if (invItem.status === "PENDING") {
+          return; // Skip stock update and transaction if item is pending
+        }
+
         allNewTransactions.push({
           id: `tx-in-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           date: draft.invoiceDate,
@@ -1160,7 +1170,7 @@ export const PurchaseInvoiceForm: React.FC<{
                       </div>
 
                       {/* Row 2, Col 1: Qty */}
-                      <div className="col-span-12 sm:col-span-4 md:col-span-3 space-y-1.5">
+                      <div className="col-span-12 sm:col-span-4 md:col-span-2 space-y-1.5">
                         <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
                           JUMLAH (QTY)
                         </label>
@@ -1184,12 +1194,11 @@ export const PurchaseInvoiceForm: React.FC<{
                             }
                           }}
                           placeholder="0"
-                          className="text-center focus-visible:ring-emerald-500 border-slate-200 dark:border-slate-800 h-11 bg-white dark:bg-slate-950 font-bold rounded-xl"
+                          className="text-center focus-visible:ring-emerald-500 border-slate-200 dark:border-slate-800 h-11 bg-white dark:bg-slate-950 font-bold rounded-xl px-1"
                         />
                       </div>
-
                       {/* Row 2, Col 2: Satuan */}
-                      <div className="col-span-12 sm:col-span-4 md:col-span-3 space-y-1.5">
+                      <div className="col-span-12 sm:col-span-4 md:col-span-2 space-y-1.5">
                         <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
                           SATUAN
                         </label>
@@ -1205,7 +1214,7 @@ export const PurchaseInvoiceForm: React.FC<{
                               selectedUnitId: e.target.value,
                             })
                           }
-                          className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-800 dark:bg-slate-950 disabled:opacity-50 disabled:bg-slate-100 font-bold text-slate-800 dark:text-slate-100 cursor-pointer"
+                          className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-2 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-800 dark:bg-slate-950 disabled:opacity-50 disabled:bg-slate-100 font-bold text-slate-800 dark:text-slate-100 cursor-pointer"
                         >
                           {!currentItem.item ? (
                             <option value="">Pilih barang...</option>
@@ -1226,11 +1235,10 @@ export const PurchaseInvoiceForm: React.FC<{
                           )}
                         </select>
                       </div>
-
                       {/* Row 2, Col 3: Exp Date */}
-                      <div className="col-span-12 sm:col-span-4 md:col-span-3 space-y-1.5">
+                      <div className="col-span-12 sm:col-span-4 md:col-span-2 space-y-1.5">
                         <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
-                          TANGGAL KADALUARSA
+                          KADALUARSA
                         </label>
                         <Input
                           type="date"
@@ -1247,21 +1255,39 @@ export const PurchaseInvoiceForm: React.FC<{
                               handleAddItem();
                             }
                           }}
-                          className="text-sm focus-visible:ring-emerald-500 border-slate-200 dark:border-slate-800 text-slate-500 min-w-0 h-11 bg-white dark:bg-slate-950 rounded-xl"
+                          className="text-sm focus-visible:ring-emerald-500 border-slate-200 dark:border-slate-800 text-slate-500 min-w-0 h-11 bg-white dark:bg-slate-950 rounded-xl px-2"
                         />
                       </div>
-
-                      {/* Row 2, Col 4: Add Button perfectly aligned */}
-                      <div className="col-span-12 sm:col-span-4 md:col-span-3 space-y-1.5 flex flex-col justify-end">
+                      {/* Row 2, Col 4: Status */}
+                      <div className="col-span-12 sm:col-span-6 md:col-span-3 space-y-1.5">
+                        <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">
+                          STATUS BARANG
+                        </label>
+                        <select
+                          value={currentItem.status}
+                          onChange={(e) =>
+                            setCurrentItem({
+                              ...currentItem,
+                              status: e.target.value as "RECEIVED" | "PENDING",
+                            })
+                          }
+                          className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-slate-800 dark:bg-slate-950 disabled:opacity-50 font-bold text-slate-800 dark:text-slate-100 cursor-pointer"
+                        >
+                          <option value="RECEIVED">Diterima</option>
+                          <option value="PENDING">Pending (Belum Datang)</option>
+                        </select>
+                      </div>
+                      {/* Row 2, Col 5: Add Button perfectly aligned */}
+                      <div className="col-span-12 sm:col-span-6 md:col-span-3 space-y-1.5 flex flex-col justify-end">
                         <span className="hidden md:block text-[10px] text-transparent select-none">
                           ADD ACTION
                         </span>
                         <Button
                           onClick={handleAddItem}
                           disabled={!currentItem.item}
-                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold h-11 rounded-xl shadow-md hover:shadow-emerald-500/15 flex items-center justify-center gap-1.5 select-none transition-all cursor-pointer text-xs uppercase tracking-wider"
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold h-11 rounded-xl shadow-md hover:shadow-emerald-500/15 flex items-center justify-center gap-1.5 select-none transition-all cursor-pointer text-xs uppercase tracking-wider px-2"
                         >
-                          <Plus className="w-4 h-4" /> Tambah Barang
+                          <Plus className="w-4 h-4 shrink-0" /> <span className="truncate">Tambah Barang</span>
                         </Button>
                       </div>
                     </div>
@@ -1389,9 +1415,9 @@ export const PurchaseInvoiceForm: React.FC<{
                               </div>
                             </div>
 
-                            <div className="md:col-span-4 flex flex-row items-center justify-between md:justify-center gap-2">
+                            <div className="md:col-span-4 flex flex-wrap items-center justify-between md:justify-center gap-2">
                               {item.batchNo ? (
-                                <span className="inline-flex items-center bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md text-xs font-mono font-bold text-slate-650 dark:text-slate-300">
+                                <span className="inline-flex items-center bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md text-xs font-mono font-bold text-slate-650 dark:text-slate-300 whitespace-nowrap">
                                   Batch: {item.batchNo}
                                 </span>
                               ) : (
@@ -1400,12 +1426,21 @@ export const PurchaseInvoiceForm: React.FC<{
                                 </span>
                               )}
                               {item.expDate ? (
-                                <span className="text-xs bg-rose-55 dark:bg-rose-950/20 border border-rose-101 dark:border-rose-950/30 text-rose-600 dark:text-rose-450 px-2.5 py-1 rounded-md font-bold">
+                                <span className="text-xs bg-rose-55 dark:bg-rose-950/20 border border-rose-101 dark:border-rose-950/30 text-rose-600 dark:text-rose-450 px-2.5 py-1 rounded-md font-bold whitespace-nowrap">
                                   Exp: {item.expDate}
                                 </span>
                               ) : (
                                 <span className="text-slate-450 dark:text-slate-500 italic text-[11px] select-none">
                                   Tanpa Kadaluarsa
+                                </span>
+                              )}
+                              {item.status === "PENDING" ? (
+                                <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded font-bold uppercase tracking-wider whitespace-nowrap border border-amber-200">
+                                  PENDING
+                                </span>
+                              ) : (
+                                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded font-bold uppercase tracking-wider whitespace-nowrap border border-emerald-200">
+                                  DITERIMA
                                 </span>
                               )}
                             </div>

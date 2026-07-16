@@ -67,6 +67,88 @@ export const PurchaseInvoiceList: React.FC<{
     null,
   );
 
+  const handleReceivePendingItem = (invoice: PurchaseInvoice, itemId: string) => {
+    if (!confirm("Konfirmasi penerimaan barang pending ini? Stok akan ditambahkan ke persediaan.")) return;
+
+    const itemIdx = invoice.items.findIndex((i) => i.itemId === itemId);
+    if (itemIdx === -1) return;
+    const invItem = invoice.items[itemIdx];
+
+    const bQty = invItem.baseQty || invItem.qty;
+
+    // Create transaction IN
+    const newTx = {
+      id: `tx-in-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      date: new Date().toISOString().split("T")[0],
+      type: "IN" as const,
+      itemId: invItem.itemId,
+      qty: bQty,
+      displayUnitId: invItem.selectedUnitId,
+      displayQty: invItem.qty,
+      conversionRate: invItem.conversionRate,
+      supplierId: invoice.supplierId || undefined,
+      notes: `Penerimaan Barang Pending [Faktur]: ${invoice.invoiceNo} (Batch: ${invItem.batchNo || "-"})`,
+      userId: currentUser?.id || "unknown",
+      invoiceId: invoice.id,
+    };
+
+    // Update item stock
+    const updatedItemsList = data.items.map((item) => {
+      if (item.id === invItem.itemId) {
+        const normBatchNo = invItem.batchNo ? invItem.batchNo.trim() : "";
+        const batches = item.batches ? [...item.batches] : [];
+        let unbatchedStock = item.unbatchedStock !== undefined ? item.unbatchedStock : item.stock;
+
+        if (normBatchNo !== "") {
+          const batchIdx = batches.findIndex(b => b.batchNumber === normBatchNo);
+          if (batchIdx >= 0) {
+            batches[batchIdx] = {
+              ...batches[batchIdx],
+              stock: (batches[batchIdx].stock || 0) + bQty
+            };
+          } else {
+            batches.push({
+              batchNumber: normBatchNo,
+              expirationDate: invItem.expDate || "",
+              stock: bQty
+            });
+          }
+        } else {
+          unbatchedStock = unbatchedStock + bQty;
+        }
+
+        const newTotalStock = batches.reduce((sum, b) => sum + (b.stock || 0), 0) + unbatchedStock;
+        return { ...item, batches, unbatchedStock, stock: newTotalStock };
+      }
+      return item;
+    });
+
+    // Update invoice item status
+    const updatedInvoices = data.purchaseInvoices.map(inv => {
+      if (inv.id === invoice.id) {
+        const newItems = inv.items.map(i => {
+          if (i.itemId === itemId) {
+            return { ...i, status: "RECEIVED" as const };
+          }
+          return i;
+        });
+        return { ...inv, items: newItems };
+      }
+      return inv;
+    });
+
+    logActivity(
+      "Terima Barang Pending",
+      `Faktur ${invoice.invoiceNo}, Item ID: ${itemId}`
+    );
+
+    updateData({
+      transactions: [newTx, ...data.transactions],
+      items: updatedItemsList,
+      purchaseInvoices: updatedInvoices,
+    });
+  };
+
   const handleCancel = (invoice: PurchaseInvoice) => {
     if (invoice.status === "CANCELED") return;
     if (
@@ -568,25 +650,50 @@ export const PurchaseInvoiceList: React.FC<{
                                     {item.expDate ? `/ ${item.expDate}` : ""}
                                   </span>
                                 </div>
-                                {!isCanceled && item.returnedQty < item.qty && (
-                                  <div className="flex justify-end mt-1">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() =>
-                                        openReturnModal(
-                                          inv.id,
-                                          item.itemId,
-                                          item.qty - item.returnedQty,
-                                        )
-                                      }
-                                      className="border-orange-200 text-orange-600 hover:bg-orange-50 h-7 text-xs px-3"
-                                    >
-                                      <RotateCcw className="w-3 h-3 mr-1" />{" "}
-                                      Retur
-                                    </Button>
+                                <div className="flex justify-between items-center mt-1">
+                                  <div>
+                                    {item.status === "PENDING" ? (
+                                      <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold uppercase border border-amber-200 inline-block">
+                                        PENDING
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold uppercase border border-emerald-200 inline-block">
+                                        DITERIMA
+                                      </span>
+                                    )}
                                   </div>
-                                )}
+                                  <div className="flex gap-2">
+                                    {!isCanceled && item.status === "PENDING" && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          handleReceivePendingItem(inv, item.itemId)
+                                        }
+                                        className="border-emerald-200 text-emerald-600 hover:bg-emerald-50 h-7 text-xs px-3"
+                                      >
+                                        Terima
+                                      </Button>
+                                    )}
+                                    {!isCanceled && item.returnedQty < item.qty && item.status !== "PENDING" && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          openReturnModal(
+                                            inv.id,
+                                            item.itemId,
+                                            item.qty - item.returnedQty,
+                                          )
+                                        }
+                                        className="border-orange-200 text-orange-600 hover:bg-orange-50 h-7 text-xs px-3"
+                                      >
+                                        <RotateCcw className="w-3 h-3 mr-1" />{" "}
+                                        Retur
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             );
                           })}
@@ -757,6 +864,9 @@ export const PurchaseInvoiceList: React.FC<{
                                         Subtotal
                                       </th>
                                       <th className="px-3 py-2 text-center">
+                                        Status
+                                      </th>
+                                      <th className="px-3 py-2 text-center">
                                         Aksi
                                       </th>
                                     </tr>
@@ -837,25 +947,51 @@ export const PurchaseInvoiceList: React.FC<{
                                               ).format(item.subtotal)}
                                             </td>
                                             <td className="px-3 py-2 text-center">
-                                              {!isCanceled &&
-                                                item.returnedQty < item.qty && (
+                                              {item.status === "PENDING" ? (
+                                                <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider border border-amber-200">
+                                                  PENDING
+                                                </span>
+                                              ) : (
+                                                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider border border-emerald-200">
+                                                  DITERIMA
+                                                </span>
+                                              )}
+                                            </td>
+                                            <td className="px-3 py-2 text-center">
+                                              <div className="flex gap-2 justify-center items-center">
+                                                {!isCanceled && item.status === "PENDING" && (
                                                   <Button
                                                     size="sm"
                                                     variant="outline"
                                                     onClick={() =>
-                                                      openReturnModal(
-                                                        inv.id,
-                                                        item.itemId,
-                                                        item.qty -
-                                                          item.returnedQty,
-                                                      )
+                                                      handleReceivePendingItem(inv, item.itemId)
                                                     }
-                                                    className="border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-900/50 dark:hover:bg-orange-900/30 h-7 text-xs"
+                                                    className="border-emerald-200 text-emerald-600 hover:bg-emerald-50 h-7 text-xs px-3"
                                                   >
-                                                    <RotateCcw className="w-3 h-3 mr-1" />{" "}
-                                                    Retur
+                                                    Terima
                                                   </Button>
                                                 )}
+                                                {!isCanceled &&
+                                                  item.returnedQty < item.qty &&
+                                                  item.status !== "PENDING" && (
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() =>
+                                                        openReturnModal(
+                                                          inv.id,
+                                                          item.itemId,
+                                                          item.qty -
+                                                            item.returnedQty,
+                                                        )
+                                                      }
+                                                      className="border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-900/50 dark:hover:bg-orange-900/30 h-7 text-xs"
+                                                    >
+                                                      <RotateCcw className="w-3 h-3 mr-1" />{" "}
+                                                      Retur
+                                                    </Button>
+                                                  )}
+                                              </div>
                                             </td>
                                           </tr>
                                         );
