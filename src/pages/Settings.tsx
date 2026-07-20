@@ -383,6 +383,7 @@ export const Settings: React.FC = () => {
   ] as const;
 
   const allTabs = [
+    { id: "database", label: "Database", perm: "SETTING_TAB_DATABASE" },
     { id: "theme", label: "Tampilan Tema", perm: "SETTING_TAB_THEME" },
     { id: "backup", label: "Backup & Restore", perm: "SETTING_TAB_BACKUP" },
     { id: "profile", label: "Profil Gudang", perm: "SETTING_TAB_PROFILE" },
@@ -436,6 +437,59 @@ export const Settings: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto min-h-0 pt-2">
         <JarvisTransition pageKey={activeTab} mode="tab">
+          {activeTab === "database" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Pengaturan Database</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <p className="text-sm font-medium mb-3">Pilih Mode Penyimpanan</p>
+                  <div className="flex flex-col gap-3">
+                    <label className="flex items-center space-x-3 p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                      <input
+                        type="radio"
+                        name="db_type"
+                        value="firebase"
+                        checked={(localStorage.getItem("gudang_db_type") || "firebase") === "firebase"}
+                        onChange={() => {
+                          if (confirm("Ubah database ke Firebase? Halaman akan dimuat ulang.")) {
+                            localStorage.setItem("gudang_db_type", "firebase");
+                            window.location.reload();
+                          }
+                        }}
+                        className="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                      />
+                      <div>
+                        <div className="font-bold text-slate-900 dark:text-slate-100">Firebase (Cloud)</div>
+                        <div className="text-sm text-slate-500">Data tersimpan aman di cloud dan dapat diakses dari perangkat mana saja.</div>
+                      </div>
+                    </label>
+                    <label className="flex items-center space-x-3 p-4 border rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                      <input
+                        type="radio"
+                        name="db_type"
+                        value="local"
+                        checked={localStorage.getItem("gudang_db_type") === "local"}
+                        onChange={() => {
+                          if (confirm("Ubah database ke LocalStorage? Data hanya akan tersimpan di browser ini saja. Halaman akan dimuat ulang.")) {
+                            localStorage.setItem("gudang_db_type", "local");
+                            window.location.reload();
+                          }
+                        }}
+                        className="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                      />
+                      <div>
+                        <div className="font-bold text-slate-900 dark:text-slate-100">LocalStorage (Lokal)</div>
+                        <div className="text-sm text-slate-500">Data tersimpan hanya di browser perangkat ini. Cocok untuk penggunaan offline.</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {activeTab === "theme" && (
             <Card>
               <CardHeader>

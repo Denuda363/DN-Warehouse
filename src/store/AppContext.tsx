@@ -93,14 +93,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [firebaseUser, setFirebaseUser] = useState<any>(null);
+  
+  const dbType = localStorage.getItem("gudang_db_type") || "firebase";
 
   useEffect(() => {
+    if (dbType === "local") return;
     return onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
     });
-  }, []);
+  }, [dbType]);
 
   useEffect(() => {
+    if (dbType === "local") {
+      setIsLoading(true);
+      const localData = localStorage.getItem("gudang_app_data");
+      let fetched = defaultData;
+      if (localData) {
+        try {
+          fetched = { ...defaultData, ...JSON.parse(localData) } as AppData;
+          setData(fetched);
+        } catch(e) {
+          setData(defaultData);
+        }
+      } else {
+        localStorage.setItem("gudang_app_data", JSON.stringify(defaultData));
+        setData(defaultData);
+      }
+      
+      const savedUserStr =
+        sessionStorage.getItem("gudang_user") ||
+        localStorage.getItem("gudang_user");
+      if (savedUserStr) {
+        try {
+          const parsed = JSON.parse(savedUserStr);
+          const activeLocalUser = fetched.users.find(
+            (u) => u.username === parsed.username,
+          );
+          if (activeLocalUser) {
+            setCurrentUser(activeLocalUser);
+          } else {
+            setCurrentUser(null);
+          }
+        } catch(e) {
+          setCurrentUser(null);
+        }
+      }
+      setIsLoading(false);
+      return;
+    }
+
     let isSettingInitial = false;
     setIsLoading(true);
 
@@ -196,20 +237,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [currentUser, isLoading]);
 
   const updateData = async (partial: Partial<AppData>) => {
-    setData(prev => ({ ...prev, ...partial }));
-    try {
-      await setDoc(doc(db, "appData", "main"), partial, { merge: true });
-    } catch (e) {
-      handleFirestoreError(e, OperationType.UPDATE, "appData/main");
+    setData((prev) => {
+      const newData = { ...prev, ...partial };
+      if (dbType === "local") {
+        localStorage.setItem("gudang_app_data", JSON.stringify(newData));
+      }
+      return newData;
+    });
+    
+    if (dbType === "firebase") {
+      try {
+        await setDoc(doc(db, "appData", "main"), partial, { merge: true });
+      } catch (e) {
+        handleFirestoreError(e, OperationType.UPDATE, "appData/main");
+      }
     }
   };
 
   const resetData = async (newData: AppData) => {
     setData(newData);
-    try {
-      await setDoc(doc(db, "appData", "main"), newData);
-    } catch (e) {
-      handleFirestoreError(e, OperationType.UPDATE, "appData/main");
+    if (dbType === "local") {
+      localStorage.setItem("gudang_app_data", JSON.stringify(newData));
+    } else {
+      try {
+        await setDoc(doc(db, "appData", "main"), newData);
+      } catch (e) {
+        handleFirestoreError(e, OperationType.UPDATE, "appData/main");
+      }
     }
   };
 
@@ -229,16 +283,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       details,
       timestamp: new Date().toISOString(),
     };
-
-    const currentLogs = data.activityLogs || [];
-    const newLogs = [newLog, ...currentLogs].slice(0, 1000); // Keep last 1000 logs max
     
-    // Update local state first
-    setData((prev) => ({ ...prev, activityLogs: newLogs }));
-    
-    // Then write to Firestore
-    setDoc(doc(db, "appData", "main"), { activityLogs: newLogs }, { merge: true }).catch((e) => {
-      console.error("Failed to save activity log", e);
+    setData((prev) => {
+      const currentLogs = prev.activityLogs || [];
+      const newLogs = [newLog, ...currentLogs].slice(0, 1000);
+      const newData = { ...prev, activityLogs: newLogs };
+      if (dbType === "local") {
+        localStorage.setItem("gudang_app_data", JSON.stringify(newData));
+      } else {
+        setDoc(doc(db, "appData", "main"), { activityLogs: newLogs }, { merge: true }).catch((e) => {
+          console.error("Failed to save activity log", e);
+        });
+      }
+      return newData;
     });
   };
 
