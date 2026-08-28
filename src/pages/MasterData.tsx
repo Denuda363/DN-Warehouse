@@ -621,6 +621,39 @@ export const MasterData: React.FC = () => {
     itemsPage * itemsPerPage
   );
 
+  const handleExportFiltered = () => {
+    if (processedItems.length === 0) {
+      alert("Tidak ada data untuk diekspor!");
+      return;
+    }
+
+    const rows = processedItems.map((item) => {
+      const category = data.categories.find((c) => c.id === item.categoryId);
+      const subCategory = data.subCategories?.find((sc) => sc.id === item.subCategoryId);
+      const unit = data.units.find((u) => u.id === item.unitId);
+      const primarySup = data.suppliers.find((s) => s.id === item.supplierId);
+      const altSup = data.suppliers.find((s) => s.id === item.altSupplierId);
+
+      return {
+        SKU: item.sku || "",
+        Nama_Produk: item.name || "",
+        Harga_Jual: item.sellingPrice || 0,
+        Stok: item.stock || 0,
+        Min_Stok: item.minStock || 5,
+        Kategori: category ? category.name : "",
+        Sub_Kategori: subCategory ? subCategory.name : "",
+        Satuan: unit ? unit.name : "",
+        Supplier_Utama: primarySup ? primarySup.name : "",
+        Supplier_Alternatif: altSup ? altSup.name : "",
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Terfilter");
+    XLSX.writeFile(workbook, `Data_Produk_Filter_${new Date().toISOString().split("T")[0]}.xlsx`);
+  };
+
   return (
     <div className="space-y-6 flex flex-col h-[calc(100vh-120px)] relative">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -643,7 +676,18 @@ export const MasterData: React.FC = () => {
               </Button>
             </div>
           ) : activeTab !== "opname" ? (
-            <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg gap-1 border border-slate-200 dark:border-slate-800 w-full sm:w-auto">
+            <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg gap-1 border border-slate-200 dark:border-slate-800 w-full sm:w-auto overflow-x-auto custom-scrollbar">
+              {activeTab === "items" && (
+                <Button
+                  onClick={handleExportFiltered}
+                  variant="ghost"
+                  size="icon"
+                  className="text-indigo-600 dark:text-indigo-400 h-9 w-10 sm:w-9 hover:bg-white dark:hover:bg-slate-800 shrink-0"
+                  title="Export Data Terfilter"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                </Button>
+              )}
               <Button
                 onClick={downloadTemplate}
                 variant="ghost"
