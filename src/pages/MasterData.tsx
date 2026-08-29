@@ -845,7 +845,131 @@ export const MasterData: React.FC = () => {
                 ))}
             </div>
           )}
-          <table className={`w-full text-sm text-left min-w-[800px] ${activeTab === 'items' ? 'hidden md:table' : ''}`}>
+
+          {activeTab === "categories" && (
+            <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800/50">
+              {data.categories
+                  .filter((i) => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map((cat) => (
+                    <div key={cat.id} className="p-4 flex gap-3 items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{cat.name}</div>
+                        <div className="text-[11px] text-slate-500 font-mono mt-0.5">{cat.id}</div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button onClick={() => openEditModal(cat)} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"><Edit className="w-4 h-4" /></Button>
+                        <Button onClick={() => handleDelete(cat.id, "categories")} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    </div>
+                  ))}
+            </div>
+          )}
+
+          {activeTab === "subCategories" && (
+            <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800/50">
+              {(data.subCategories || [])
+                  .filter((i) => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map((subcat) => (
+                    <div key={subcat.id} className="p-4 flex gap-3 items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{subcat.name}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 truncate">{data.categories.find(c => c.id === subcat.categoryId)?.name || "-"} • <span className="font-mono">{subcat.id}</span></div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button onClick={() => openEditModal(subcat)} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"><Edit className="w-4 h-4" /></Button>
+                        <Button onClick={() => handleDelete(subcat.id, "subCategories")} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    </div>
+                  ))}
+            </div>
+          )}
+
+          {activeTab === "units" && (
+            <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800/50">
+              {data.units
+                  .filter((i) => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map((unit) => (
+                    <div key={unit.id} className="p-4 flex gap-3 items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{unit.name}</div>
+                        <div className="text-[11px] text-slate-500 font-mono mt-0.5">{unit.id}</div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button onClick={() => openEditModal(unit)} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"><Edit className="w-4 h-4" /></Button>
+                        <Button onClick={() => handleDelete(unit.id, "units")} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    </div>
+                  ))}
+            </div>
+          )}
+
+          {activeTab === "suppliers" && (
+            <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800/50">
+              {data.suppliers
+                  .filter((i) => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map((supplier) => (
+                    <div key={supplier.id} className="p-4 flex gap-3 items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{supplier.name}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 truncate">{supplier.contact || "-"} • <span className="font-mono">{supplier.id}</span></div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button onClick={() => openEditModal(supplier)} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"><Edit className="w-4 h-4" /></Button>
+                        <Button onClick={() => handleDelete(supplier.id, "suppliers")} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    </div>
+                  ))}
+            </div>
+          )}
+
+          {activeTab === "staffs" && (
+            <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800/50">
+              {data.staffs
+                  .filter((i) => i.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map((staff) => (
+                    <div key={staff.id} className="p-4 flex gap-3 items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{staff.name}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5 truncate">{staff.phone || "-"} • <span className="font-mono">{staff.id}</span></div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button onClick={() => openEditModal(staff)} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"><Edit className="w-4 h-4" /></Button>
+                        <Button onClick={() => handleDelete(staff.id, "staffs")} variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    </div>
+                  ))}
+            </div>
+          )}
+
+          {activeTab === "low-stock" && (
+            <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800/50">
+              {Object.entries(lowStockBySupplier).length > 0 ? (
+                Object.entries(lowStockBySupplier).map(([supplierId, items]) => (
+                  <div key={supplierId} className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-b dark:border-slate-800">
+                    <h3 className="font-bold text-sm text-indigo-700 dark:text-indigo-400 mb-2">
+                      {getSupplierName(supplierId)}
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      {items.map((item) => (
+                        <div key={item.id} className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                          <div className="font-semibold text-sm truncate">{item.name}</div>
+                          <div className="text-[11px] text-slate-500 font-mono mt-0.5 truncate">{item.sku || "-"}</div>
+                          <div className="mt-2 flex justify-between items-center text-xs">
+                            <span className="text-rose-600 dark:text-rose-400 font-bold">Stok: {item.stock}</span>
+                            <span className="text-slate-500">Min: {item.minStock || 0}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-slate-500 italic">Semua stok dalam keadaan aman.</div>
+              )}
+            </div>
+          )}
+
+          <table className="w-full text-sm text-left min-w-[800px] hidden md:table">
             <thead className="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-900/50 sticky top-0 z-10 border-b dark:border-slate-800">
               {activeTab === "items" && (
                 <tr>
@@ -1246,16 +1370,17 @@ export const MasterData: React.FC = () => {
         </div>
 
         {activeTab === "items" && totalItemsPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t dark:border-slate-800">
-            <span className="text-sm text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t dark:border-slate-800 gap-3">
+            <span className="text-sm text-slate-500 text-center sm:text-left">
               Menampilkan {(itemsPage - 1) * itemsPerPage + 1} - {Math.min(itemsPage * itemsPerPage, processedItems.length)} dari {processedItems.length} Produk
             </span>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <Button
                 variant="outline"
                 size="sm"
                 disabled={itemsPage === 1}
                 onClick={() => setItemsPage(p => Math.max(1, p - 1))}
+                className="flex-1 sm:flex-none"
               >
                 Sebelumnya
               </Button>
@@ -1264,6 +1389,7 @@ export const MasterData: React.FC = () => {
                 size="sm"
                 disabled={itemsPage === totalItemsPages}
                 onClick={() => setItemsPage(p => Math.min(totalItemsPages, p + 1))}
+                className="flex-1 sm:flex-none"
               >
                 Selanjutnya
               </Button>
